@@ -7,7 +7,7 @@ import Aurora from "@/Backgrounds/Aurora/Aurora";
 
 export default function LandingPage() {
   const [showAuthForm, setShowAuthForm] = useState(false);
-  const [authMode, setAuthMode] = useState("login"); // 'login' or 'signup'
+  const [authMode, setAuthMode] = useState("login");
 
   if (showAuthForm) {
     return (
@@ -39,7 +39,7 @@ export default function LandingPage() {
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         {/* Header */}
-        <header className="relative z-10 px-4 sm:px-6 lg:px-8 py-6">
+        <header className="relative z-50 px-4 sm:px-6 lg:px-8 py-6">
           <div className="max-w-7xl mx-auto flex justify-between items-center">
             <div className="flex items-center space-x-2">
               <img
@@ -56,7 +56,7 @@ export default function LandingPage() {
                 CartPilot
               </GradientText>
             </div>
-            <div className="hidden sm:flex space-x-4">
+            <div className="flex space-x-4 relative z-50">
               <button
                 onClick={handleLogin}
                 className="px-4 py-2 text-sm font-medium rounded-lg border transition-colors"
@@ -161,11 +161,11 @@ export default function LandingPage() {
         {/* Background Decoration */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div
-            className="absolute -right-50 w-80 h-80 rounded-full opacity-10"
+            className="absolute -right-50 w-80 h-80 rounded-full opacity-10 animate-pulse"
             style={{ backgroundColor: "var(--primary)" }}
           ></div>
           <div
-            className="absolute -bottom-0 -left-60 w-80 h-80 rounded-full opacity-10"
+            className="absolute -bottom-0 -left-60 w-80 h-80 rounded-full opacity-10 animate-pulse delay-1000"
             style={{ backgroundColor: "var(--primary)" }}
           ></div>
         </div>
@@ -317,36 +317,17 @@ export default function LandingPage() {
           </button>
         </div>
       </div>
-
-      {/* Mobile CTA Buttons */}
-      <div
-        className="sm:hidden fixed bottom-0 left-0 right-0 p-4 border-t"
-        style={{
-          backgroundColor: "var(--surface)",
-          borderColor: "var(--border)",
-        }}
-      >
-        <div className="flex space-x-3">
-          <button
-            onClick={handleLogin}
-            className="flex-1 py-3 text-center font-medium rounded-lg border transition-colors"
-            style={{
-              borderColor: "var(--border)",
-              color: "var(--foreground)",
-              backgroundColor: "transparent",
-            }}
-          >
-            Iniciar Sesión
-          </button>
-          <button
-            onClick={handleSignup}
-            className="flex-1 py-3 text-center font-medium rounded-lg text-white transition-colors"
-            style={{ backgroundColor: "var(--primary)" }}
-          >
-            Registrarse
-          </button>
-        </div>
-      </div>
+        {/* Footer */}
+        <footer className="py-12" style={{ backgroundColor: "var(--background-secondary)" }}>
+          <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+            <p
+              className="text-sm"
+              style={{ color: "var(--text-muted)" }}
+            >
+              © 2025 CartPilot. Todos los derechos reservados.
+            </p>
+          </div>
+        </footer>
     </div>
   );
 }
