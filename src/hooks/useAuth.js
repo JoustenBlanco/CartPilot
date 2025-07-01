@@ -2,6 +2,7 @@
 
 import { useState, useEffect, createContext, useContext } from 'react'
 import { supabase } from '@/lib/supabase'
+import { handleAuthError, withAuthErrorHandling, clearAllAuthData } from '@/lib/auth-error-handler'
 
 const AuthContext = createContext({})
 
@@ -52,14 +53,32 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     // Get initial session
     const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      setUser(session?.user ?? null)
-      
-      if (session?.user) {
-        await loadUserProfile(session.user.id)
+      try {
+        const result = await withAuthErrorHandling(async () => {
+          return await supabase.auth.getSession()
+        })
+        
+        if (!result || !result.data) {
+          setUser(null)
+          setProfile(null)
+          setLoading(false)
+          return
+        }
+        
+        const { data: { session } } = result
+        setUser(session?.user ?? null)
+        
+        if (session?.user) {
+          await loadUserProfile(session.user.id)
+        }
+        
+        setLoading(false)
+      } catch (error) {
+        console.error('Error getting session:', error.message)
+        setUser(null)
+        setProfile(null)
+        setLoading(false)
       }
-      
-      setLoading(false)
     }
 
     getSession()
@@ -67,6 +86,23 @@ export const AuthProvider = ({ children }) => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        // Manejar eventos específicos de error de token
+        if (event === 'TOKEN_REFRESHED' && !session) {
+          console.warn('Token refresh failed, clearing session')
+          setUser(null)
+          setProfile(null)
+          setLoading(false)
+          return
+        }
+
+        // Manejar evento de logout
+        if (event === 'SIGNED_OUT') {
+          setUser(null)
+          setProfile(null)
+          setLoading(false)
+          return
+        }
+
         setUser(session?.user ?? null)
         
         if (session?.user) {
@@ -177,6 +213,7 @@ export const AuthProvider = ({ children }) => {
     signInWithGoogle,
     signOut,
     loadUserProfile,
+    clearAllAuthData, // Función de emergencia para limpiar tokens
   }
 
   return (

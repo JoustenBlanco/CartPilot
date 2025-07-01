@@ -1,11 +1,11 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import AuthForm from '@/components/AuthForm'
 
-export default function AuthPage() {
+function AuthPageContent() {
   const { user, loading } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -38,5 +38,24 @@ export default function AuthPage() {
       )}
       <AuthForm onBack={() => router.push('/')} />
     </>
+  )
+}
+
+function AuthPageFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--background)' }}>
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: 'var(--primary)' }}></div>
+        <p style={{ color: 'var(--foreground)' }}>Cargando...</p>
+      </div>
+    </div>
+  )
+}
+
+export default function AuthPage() {
+  return (
+    <Suspense fallback={<AuthPageFallback />}>
+      <AuthPageContent />
+    </Suspense>
   )
 }
