@@ -58,7 +58,7 @@ export default function Dashboard() {
                 colors={["#ff8e01", "#ffb03f", "#d47300", "#ffb03f", "#ff8e01"]}
                 animationSpeed={10}
                 showBorder={false}
-                className="custom-class"
+                className="custom-class text-2xl font-bold"
               >
                 CartPilot
               </GradientText>

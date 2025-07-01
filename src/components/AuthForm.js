@@ -3,8 +3,8 @@
 import { useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 
-export default function AuthForm() {
-  const [isSignUp, setIsSignUp] = useState(false)
+export default function AuthForm({ initialMode = 'login', onBack = null }) {
+  const [isSignUp, setIsSignUp] = useState(initialMode === 'signup')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [fullName, setFullName] = useState('')
@@ -66,6 +66,24 @@ export default function AuthForm() {
   return (
     <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8" style={{ backgroundColor: 'var(--background)' }}>
       <div className="max-w-md w-full space-y-8">
+        {onBack && (
+          <button
+            onClick={onBack}
+            className="flex items-center text-sm font-medium mb-4 transition-colors"
+            style={{ color: 'var(--primary)' }}
+            onMouseEnter={(e) => {
+              e.target.style.color = 'var(--primary-hover)'
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.color = 'var(--primary)'
+            }}
+          >
+            <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+            </svg>
+            Volver al inicio
+          </button>
+        )}
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold" style={{ color: 'var(--foreground)' }}>
             {isSignUp ? 'Crear cuenta' : 'Iniciar sesión'}

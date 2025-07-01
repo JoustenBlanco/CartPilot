@@ -1,7 +1,7 @@
 'use client'
 
 import { useAuth } from '@/hooks/useAuth'
-import AuthForm from '@/components/AuthForm'
+import LandingPage from '@/components/LandingPage'
 import Dashboard from '@/components/Dashboard'
 
 export default function Home() {
@@ -22,5 +22,5 @@ export default function Home() {
     )
   }
 
-  return user ? <Dashboard /> : <AuthForm />
+  return user ? <Dashboard /> : <LandingPage />
 }

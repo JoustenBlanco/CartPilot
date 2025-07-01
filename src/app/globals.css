@@ -14,6 +14,12 @@
   }
 }
 
+/* Gradient text animation utility */
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient 3s ease infinite;
+}
+
 :root {
   /* Spotify-inspired Color Palette with #ff8e01 as primary */
   
