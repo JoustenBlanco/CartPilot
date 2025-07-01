@@ -100,6 +100,7 @@ export const AuthProvider = ({ children }) => {
             {
               id: data.user.id,
               full_name: fullName,
+              // No incluir avatar_url ya que la tabla no tiene esa columna
             },
             {
               onConflict: 'id'
@@ -137,6 +138,24 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  const signInWithGoogle = async () => {
+    try {
+      setLoading(true)
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`
+        }
+      })
+      if (error) throw error
+      return { data, error: null }
+    } catch (error) {
+      return { data: null, error: error.message }
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const signOut = async () => {
     try {
       setLoading(true)
@@ -155,6 +174,7 @@ export const AuthProvider = ({ children }) => {
     loading,
     signUp,
     signIn,
+    signInWithGoogle,
     signOut,
     loadUserProfile,
   }

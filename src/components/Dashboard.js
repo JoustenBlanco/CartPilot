@@ -53,7 +53,12 @@ export default function Dashboard() {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
-            <div className="flex items-center">
+            <div className="flex items-center space-x-2">
+              <img
+                src="/images/logo.png"
+                alt="CartPilot Logo"
+                className="w-7 h-7"
+              />
               <GradientText
                 colors={["#ff8e01", "#ffb03f", "#d47300", "#ffb03f", "#ff8e01"]}
                 animationSpeed={10}
@@ -64,12 +69,26 @@ export default function Dashboard() {
               </GradientText>
             </div>
             <div className="flex items-center space-x-4">
-              <span
-                className="text-sm"
-                style={{ color: "var(--text-secondary)" }}
-              >
-                Hola, {profile?.full_name || user?.email}
-              </span>
+              <div className="flex items-center space-x-3">
+                {profile?.avatar_url && (
+                  <img
+                    src={profile.avatar_url}
+                    alt={`Avatar de ${profile.full_name || user?.email}`}
+                    className="w-8 h-8 rounded-full object-cover border-2"
+                    style={{ borderColor: 'var(--primary)' }}
+                    onError={(e) => {
+                      // Si la imagen falla al cargar, ocultarla
+                      e.target.style.display = 'none';
+                    }}
+                  />
+                )}
+                <span
+                  className="text-sm"
+                  style={{ color: "var(--text-secondary)" }}
+                >
+                  Hola, {profile?.full_name || user?.email}
+                </span>
+              </div>
               <button
                 onClick={signOut}
                 className="px-4 py-2 rounded-md text-sm font-medium transition-colors text-white"
@@ -140,6 +159,27 @@ export default function Dashboard() {
                   Información del usuario:
                 </h4>
                 <dl className="grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-2">
+                  {profile?.avatar_url && (
+                    <div className="col-span-full">
+                      <dt
+                        className="text-xs font-medium"
+                        style={{ color: "var(--text-muted)" }}
+                      >
+                        Avatar:
+                      </dt>
+                      <dd className="mt-1">
+                        <img
+                          src={profile.avatar_url}
+                          alt={`Avatar de ${profile.full_name || user?.email}`}
+                          className="w-16 h-16 rounded-full object-cover border-4"
+                          style={{ borderColor: 'var(--primary)' }}
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                          }}
+                        />
+                      </dd>
+                    </div>
+                  )}
                   {profile?.full_name && (
                     <div>
                       <dt
