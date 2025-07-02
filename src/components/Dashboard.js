@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
+import { sendNewListEmail, getListProductsForEmail } from "@/lib/email-helpers";
 import AddProductToList from "./AddProductToList";
 import Avatar from "./Avatar";
 import SettingsModal from "./SettingsModal";
@@ -191,6 +192,23 @@ export default function Dashboard() {
         .select();
       
       if (error) throw error;
+      
+      const newList = data[0];
+      
+      // Enviar correo de confirmación
+      try {
+        await sendNewListEmail({
+          userEmail: user.email,
+          userName: profile?.nombre || user.email.split('@')[0],
+          listName: newListName,
+          listDate: newList.fecha,
+          products: [] // Lista nueva sin productos iniciales
+        });
+        console.log('✅ Correo de confirmación enviado');
+      } catch (emailError) {
+        console.error('⚠️ Error enviando correo (lista creada exitosamente):', emailError);
+        // No impedimos que la lista se cree si hay error en el correo
+      }
       
       setNewListName("");
       setCurrentView('main');
