@@ -452,12 +452,27 @@ function CreateProductForm({ initialName, categories, supermarkets, onSubmit, on
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.nombre.trim()) return;
+    
+    // Validaciones obligatorias
+    if (!formData.nombre.trim()) {
+      alert("El nombre del producto es obligatorio");
+      return;
+    }
+    
+    if (!formData.categoria_id) {
+      alert("Debe seleccionar una categoría para el producto");
+      return;
+    }
+    
+    if (!formData.supermercado_id) {
+      alert("Debe seleccionar un supermercado para el producto");
+      return;
+    }
     
     const productData = {
       ...formData,
-      categoria_id: formData.categoria_id || null,
-      supermercado_id: formData.supermercado_id || null,
+      categoria_id: formData.categoria_id,
+      supermercado_id: formData.supermercado_id,
       user_id: user?.id
     };
     
@@ -506,7 +521,7 @@ function CreateProductForm({ initialName, categories, supermarkets, onSubmit, on
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-sm font-medium mb-1" style={{ color: "var(--foreground)" }}>
-            Categoría
+            Categoría *
           </label>
           {showNewCategoryInput ? (
             <div className="space-y-2">
@@ -564,7 +579,7 @@ function CreateProductForm({ initialName, categories, supermarkets, onSubmit, on
                   "--tw-ring-color": "var(--primary)"
                 }}
               >
-                <option value="">Sin categoría</option>
+                <option value="">Seleccionar categoría</option>
                 {categories.map((cat) => (
                   <option key={cat.id} value={cat.id}>{cat.nombre}</option>
                 ))}
@@ -586,7 +601,7 @@ function CreateProductForm({ initialName, categories, supermarkets, onSubmit, on
 
         <div>
           <label className="block text-sm font-medium mb-1" style={{ color: "var(--foreground)" }}>
-            Supermercado
+            Supermercado *
           </label>
           {showNewSupermarketInput ? (
             <div className="space-y-2">
@@ -644,7 +659,7 @@ function CreateProductForm({ initialName, categories, supermarkets, onSubmit, on
                   "--tw-ring-color": "var(--primary)"
                 }}
               >
-                <option value="">Sin supermercado</option>
+                <option value="">Seleccionar supermercado</option>
                 {supermarkets.map((supermarket) => (
                   <option key={supermarket.id} value={supermarket.id}>{supermarket.nombre}</option>
                 ))}
@@ -705,6 +720,16 @@ function CreateProductForm({ initialName, categories, supermarkets, onSubmit, on
         </div>
       </div>
 
+      {/* Mensaje informativo sobre campos obligatorios */}
+      <div className="p-3 rounded-md border-l-4 text-sm" 
+        style={{ 
+          backgroundColor: "var(--background)", 
+          borderLeftColor: "var(--primary)",
+          color: "var(--text-secondary)"
+        }}>
+        <p>📝 Los campos marcados con asterisco (*) son obligatorios para crear un producto.</p>
+      </div>
+
       <div className="flex space-x-3 pt-4">
         <button
           type="button"
@@ -719,7 +744,12 @@ function CreateProductForm({ initialName, categories, supermarkets, onSubmit, on
         </button>
         <button
           type="submit"
-          disabled={loading || !formData.nombre.trim()}
+          disabled={
+            loading || 
+            !formData.nombre.trim() || 
+            !formData.categoria_id || 
+            !formData.supermercado_id
+          }
           className="flex-1 px-4 py-2 rounded-md text-white transition-colors disabled:opacity-50"
           style={{ backgroundColor: "var(--primary)" }}
         >

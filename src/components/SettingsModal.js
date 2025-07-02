@@ -242,7 +242,23 @@ export default function SettingsModal({ user, onClose }) {
 
   // Crear producto
   const createProduct = async () => {
-    if (!newProduct.nombre.trim() || !user) return;
+    // Validaciones obligatorias
+    if (!newProduct.nombre.trim()) {
+      alert("El nombre del producto es obligatorio");
+      return;
+    }
+    
+    if (!newProduct.categoria_id) {
+      alert("Debe seleccionar una categoría para el producto");
+      return;
+    }
+    
+    if (!newProduct.supermercado_id) {
+      alert("Debe seleccionar un supermercado para el producto");
+      return;
+    }
+    
+    if (!user) return;
 
     setLoading(true);
     try {
@@ -250,8 +266,8 @@ export default function SettingsModal({ user, onClose }) {
         {
           nombre: newProduct.nombre.trim(),
           descripcion: newProduct.descripcion.trim() || null,
-          categoria_id: newProduct.categoria_id || null,
-          supermercado_id: newProduct.supermercado_id || null,
+          categoria_id: newProduct.categoria_id,
+          supermercado_id: newProduct.supermercado_id,
           estante: newProduct.estante.trim() || null,
           cara: newProduct.cara.trim() || null,
           foto_url: newProduct.foto_url.trim() || null,
@@ -281,7 +297,21 @@ export default function SettingsModal({ user, onClose }) {
 
   // Editar producto
   const updateProduct = async (id, updatedProduct) => {
-    if (!updatedProduct.nombre || !updatedProduct.nombre.trim()) return;
+    // Validaciones obligatorias
+    if (!updatedProduct.nombre || !updatedProduct.nombre.trim()) {
+      alert("El nombre del producto es obligatorio");
+      return;
+    }
+    
+    if (!updatedProduct.categoria_id) {
+      alert("Debe seleccionar una categoría para el producto");
+      return;
+    }
+    
+    if (!updatedProduct.supermercado_id) {
+      alert("Debe seleccionar un supermercado para el producto");
+      return;
+    }
 
     setLoading(true);
     try {
@@ -292,8 +322,8 @@ export default function SettingsModal({ user, onClose }) {
           descripcion: updatedProduct.descripcion
             ? updatedProduct.descripcion.trim()
             : null,
-          categoria_id: updatedProduct.categoria_id || null,
-          supermercado_id: updatedProduct.supermercado_id || null,
+          categoria_id: updatedProduct.categoria_id,
+          supermercado_id: updatedProduct.supermercado_id,
           estante: updatedProduct.estante
             ? updatedProduct.estante.trim()
             : null,
@@ -839,7 +869,7 @@ export default function SettingsModal({ user, onClose }) {
                       className="block text-sm font-medium mb-2"
                       style={{ color: "var(--foreground)" }}
                     >
-                      Categoría
+                      Categoría *
                     </label>
                     <select
                       value={newProduct.categoria_id}
@@ -857,7 +887,7 @@ export default function SettingsModal({ user, onClose }) {
                         "--tw-ring-color": "var(--primary)",
                       }}
                     >
-                      <option value="">Sin categoría</option>
+                      <option value="">Seleccionar categoría</option>
                       {categories.map((category) => (
                         <option key={category.id} value={category.id}>
                           {category.nombre}
@@ -870,7 +900,7 @@ export default function SettingsModal({ user, onClose }) {
                       className="block text-sm font-medium mb-2"
                       style={{ color: "var(--foreground)" }}
                     >
-                      Supermercado
+                      Supermercado *
                     </label>
                     <select
                       value={newProduct.supermercado_id}
@@ -888,7 +918,7 @@ export default function SettingsModal({ user, onClose }) {
                         "--tw-ring-color": "var(--primary)",
                       }}
                     >
-                      <option value="">Sin supermercado</option>
+                      <option value="">Seleccionar supermercado</option>
                       {supermarkets.map((supermarket) => (
                         <option key={supermarket.id} value={supermarket.id}>
                           {supermarket.nombre}
@@ -977,9 +1007,24 @@ export default function SettingsModal({ user, onClose }) {
                 </div>
               </div>
 
+              {/* Mensaje informativo sobre campos obligatorios */}
+              <div className="mt-4 p-3 rounded-md border-l-4 text-sm" 
+                style={{ 
+                  backgroundColor: "var(--background)", 
+                  borderLeftColor: "var(--primary)",
+                  color: "var(--text-secondary)"
+                }}>
+                <p>📝 Los campos marcados con asterisco (*) son obligatorios para crear un producto.</p>
+              </div>
+
               <button
                 onClick={createProduct}
-                disabled={!newProduct.nombre.trim() || loading}
+                disabled={
+                  !newProduct.nombre.trim() || 
+                  !newProduct.categoria_id || 
+                  !newProduct.supermercado_id || 
+                  loading
+                }
                 className="mt-6 w-full sm:w-auto px-6 py-3 rounded-md text-white font-medium transition-colors disabled:opacity-50 text-sm"
                 style={{ backgroundColor: "var(--primary)" }}
               >
@@ -1088,7 +1133,7 @@ export default function SettingsModal({ user, onClose }) {
                                   className="block text-sm font-medium mb-2"
                                   style={{ color: "var(--foreground)" }}
                                 >
-                                  Categoría
+                                  Categoría *
                                 </label>
                                 <select
                                   value={
@@ -1110,7 +1155,7 @@ export default function SettingsModal({ user, onClose }) {
                                     color: "var(--foreground)",
                                   }}
                                 >
-                                  <option value="">Sin categoría</option>
+                                  <option value="">Seleccionar categoría</option>
                                   {categories.map((category) => (
                                     <option
                                       key={category.id}
@@ -1126,7 +1171,7 @@ export default function SettingsModal({ user, onClose }) {
                                   className="block text-sm font-medium mb-2"
                                   style={{ color: "var(--foreground)" }}
                                 >
-                                  Supermercado
+                                  Supermercado *
                                 </label>
                                 <select
                                   value={
@@ -1148,7 +1193,7 @@ export default function SettingsModal({ user, onClose }) {
                                     color: "var(--foreground)",
                                   }}
                                 >
-                                  <option value="">Sin supermercado</option>
+                                  <option value="">Seleccionar supermercado</option>
                                   {supermarkets.map((supermarket) => (
                                     <option
                                       key={supermarket.id}

@@ -465,63 +465,6 @@ export default function Dashboard() {
           {/* Vista Principal - Lista de Listas */}
           {currentView === 'main' && (
             <div className="space-y-6">
-              {/* Estadísticas rápidas */}
-              {lists.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                  <div 
-                    className="rounded-lg p-6 text-center"
-                    style={{ backgroundColor: "var(--surface)" }}
-                  >
-                    <div 
-                      className="text-2xl font-bold"
-                      style={{ color: "var(--primary)" }}
-                    >
-                      {lists.length}
-                    </div>
-                    <p 
-                      className="text-sm"
-                      style={{ color: "var(--text-secondary)" }}
-                    >
-                      Listas Totales
-                    </p>
-                  </div>
-                  <div 
-                    className="rounded-lg p-6 text-center"
-                    style={{ backgroundColor: "var(--surface)" }}
-                  >
-                    <div 
-                      className="text-2xl font-bold"
-                      style={{ color: "var(--success)" }}
-                    >
-                      {lists.filter(list => new Date(list.fecha).toDateString() === new Date().toDateString()).length}
-                    </div>
-                    <p 
-                      className="text-sm"
-                      style={{ color: "var(--text-secondary)" }}
-                    >
-                      Listas de Hoy
-                    </p>
-                  </div>
-                  <div 
-                    className="rounded-lg p-6 text-center"
-                    style={{ backgroundColor: "var(--surface)" }}
-                  >
-                    <div 
-                      className="text-2xl font-bold"
-                      style={{ color: "var(--warning)" }}
-                    >
-                      {products.length}
-                    </div>
-                    <p 
-                      className="text-sm"
-                      style={{ color: "var(--text-secondary)" }}
-                    >
-                      Productos Guardados
-                    </p>
-                  </div>
-                </div>
-              )}
-
               {/* Header con botón crear */}
               <div className="flex justify-between items-center">
                 <div>
