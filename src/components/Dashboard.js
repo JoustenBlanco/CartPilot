@@ -48,6 +48,7 @@ export default function Dashboard() {
   // Función utilitaria para convertir fecha a formato local YYYY-MM-DD
   const dateToLocalString = (dateString) => {
     if (!dateString) return '';
+    // NO agregar ni restar días - usar la fecha tal como está
     const date = new Date(dateString + 'T00:00:00');
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -55,10 +56,19 @@ export default function Dashboard() {
     return `${year}-${month}-${day}`;
   };
 
+  // Función utilitaria para obtener la fecha actual en formato YYYY-MM-DD (zona horaria local)
+  const getCurrentLocalDate = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   // Función utilitaria para convertir fecha local a formato ISO para la BD
   const localStringToISODate = (localDateString) => {
     if (!localDateString) return '';
-    return localDateString; // Ya está en formato YYYY-MM-DD
+    return localDateString; // Devolver la fecha tal como está, sin modificar
   };
 
   // Función para ordenar productos dentro de cada supermercado
@@ -202,7 +212,7 @@ export default function Dashboard() {
         .from('listas')
         .insert([{
           nombre: newListName,
-          fecha: new Date().toISOString().split('T')[0],
+          fecha: getCurrentLocalDate(), // Usar la nueva función utilitaria
           user_id: user.id
         }])
         .select();
@@ -249,7 +259,7 @@ export default function Dashboard() {
         .from('listas')
         .update({
           nombre: updatedData.nombre.trim(),
-          fecha: updatedData.fecha
+          fecha: updatedData.fecha // Usar directamente la fecha seleccionada
         })
         .eq('id', listId)
         .eq('user_id', user.id);

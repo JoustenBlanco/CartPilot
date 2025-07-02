@@ -82,7 +82,7 @@ const AlertContainer = ({ alerts, removeAlert }) => {
   return createPortal(
     <div className="fixed inset-0 pointer-events-none z-[60]">
       {/* Alertas en la esquina superior derecha */}
-      <div className="absolute top-4 right-4 space-y-3 max-w-sm w-full">
+      <div className="absolute top-4 right-4 left-4 sm:left-auto space-y-3 max-w-sm w-full sm:w-auto">
         {alerts.filter(alert => alert.type !== 'confirmation').map(alert => (
           <Alert key={alert.id} alert={alert} onClose={() => removeAlert(alert.id)} />
         ))}
@@ -159,27 +159,27 @@ const Alert = ({ alert, onClose }) => {
 
   return (
     <div className={getAlertStyles()}>
-      <div className="flex items-start p-4 rounded-lg shadow-lg backdrop-blur-sm border border-gray-600/30">
+      <div className="flex items-start p-3 sm:p-4 rounded-lg shadow-lg backdrop-blur-sm border border-gray-600/30 mx-2 sm:mx-0">
         <div className="flex-shrink-0">
           {getIcon()}
         </div>
-        <div className="ml-3 flex-1">
+        <div className="ml-3 flex-1 min-w-0">
           {alert.title && (
-            <h3 className="text-sm font-medium mb-1 text-white">
+            <h3 className="text-sm font-medium mb-1 text-white truncate">
               {alert.title}
             </h3>
           )}
-          <p className="text-sm text-gray-100">
+          <p className="text-sm text-gray-100 break-words">
             {alert.message}
           </p>
         </div>
-        <div className="ml-4 flex-shrink-0">
+        <div className="ml-2 sm:ml-4 flex-shrink-0">
           <button
-            className="inline-flex text-gray-300 hover:text-white transition-colors"
+            className="inline-flex text-gray-300 hover:text-white transition-colors p-1"
             onClick={handleClose}
           >
             <span className="sr-only">Cerrar</span>
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
             </svg>
           </button>
@@ -230,10 +230,10 @@ const ConfirmationModal = ({ alert, onClose }) => {
       <div className={`relative bg-gray-800 rounded-xl shadow-2xl max-w-md w-full mx-4 transform transition-all duration-300 border border-gray-600 ${
         isVisible ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'
       }`}>
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {/* Icon */}
-          <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 rounded-full bg-orange-100/20 border border-orange-500/30">
-            <svg className="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-4 rounded-full bg-orange-100/20 border border-orange-500/30">
+            <svg className="w-5 h-5 sm:w-6 sm:h-6 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
           </div>
@@ -241,26 +241,26 @@ const ConfirmationModal = ({ alert, onClose }) => {
           {/* Content */}
           <div className="text-center">
             {alert.title && (
-              <h3 className="text-lg font-semibold text-white mb-2">
+              <h3 className="text-base sm:text-lg font-semibold text-white mb-2">
                 {alert.title}
               </h3>
             )}
-            <p className="text-gray-300 mb-6">
+            <p className="text-sm sm:text-base text-gray-300 mb-4 sm:mb-6 break-words">
               {alert.message}
             </p>
           </div>
 
           {/* Buttons */}
-          <div className="flex space-x-3">
+          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
             <button
               onClick={handleCancel}
-              className="flex-1 px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 border border-gray-600 rounded-lg hover:bg-gray-600 hover:text-white transition-colors"
+              className="flex-1 px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 border border-gray-600 rounded-lg hover:bg-gray-600 hover:text-white transition-colors order-2 sm:order-1"
             >
               {alert.cancelText || 'Cancelar'}
             </button>
             <button
               onClick={handleConfirm}
-              className="flex-1 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors shadow-sm"
+              className="flex-1 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors shadow-sm order-1 sm:order-2"
               style={{
                 backgroundColor: 'var(--primary)',
                 boxShadow: '0 4px 12px rgba(255, 142, 1, 0.3)'
