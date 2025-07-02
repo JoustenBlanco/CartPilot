@@ -499,19 +499,17 @@ export default function Dashboard() {
                   {lists.map((list) => (
                     <div
                       key={list.id}
-                      className="rounded-lg p-6 transition-all hover:shadow-lg border"
+                      className="rounded-lg p-6 transition-all hover:shadow-lg border cursor-pointer group"
                       style={{ 
                         backgroundColor: "var(--surface)",
                         borderColor: "var(--border)"
                       }}
+                      onClick={() => openList(list)}
                     >
                       <div className="flex items-start justify-between mb-4">
-                        <div 
-                          className="flex-1 cursor-pointer"
-                          onClick={() => openList(list)}
-                        >
+                        <div className="flex-1">
                           <h3 
-                            className="text-lg font-semibold mb-2 hover:text-blue-600 transition-colors"
+                            className="text-lg font-semibold mb-2 group-hover:text-blue-600 transition-colors"
                             style={{ color: "var(--foreground)" }}
                           >
                             {list.nombre || `Lista del ${new Date(list.fecha).toLocaleDateString()}`}
@@ -743,18 +741,30 @@ export default function Dashboard() {
                               Lista
                             </span>
                           </div>
-                          <div 
-                            className="text-xs px-2 py-1 rounded-full"
-                            style={{ 
-                              backgroundColor: new Date(list.fecha).toDateString() === new Date().toDateString() 
-                                ? "var(--success)" 
-                                : "var(--background)",
-                              color: new Date(list.fecha).toDateString() === new Date().toDateString() 
-                                ? "white" 
-                                : "var(--text-muted)"
-                            }}
-                          >
-                            {new Date(list.fecha).toDateString() === new Date().toDateString() ? 'Hoy' : 'Pendiente'}
+                          <div className="flex items-center space-x-2">
+                            <div 
+                              className="text-xs px-2 py-1 rounded-full"
+                              style={{ 
+                                backgroundColor: new Date(list.fecha).toDateString() === new Date().toDateString() 
+                                  ? "var(--success)" 
+                                  : "var(--background)",
+                                color: new Date(list.fecha).toDateString() === new Date().toDateString() 
+                                  ? "white" 
+                                  : "var(--text-muted)"
+                              }}
+                            >
+                              {new Date(list.fecha).toDateString() === new Date().toDateString() ? 'Hoy' : 'Pendiente'}
+                            </div>
+                            {/* Indicador visual de que es clickeable */}
+                            <svg 
+                              className="w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity" 
+                              style={{ color: "var(--primary)" }}
+                              fill="none" 
+                              stroke="currentColor" 
+                              viewBox="0 0 24 24"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
                           </div>
                         </div>
                       )}
@@ -1080,24 +1090,40 @@ export default function Dashboard() {
                       return groups;
                     }, {})
                   ).map(([supermarket, items]) => (
-                    <div key={supermarket}>
-                      <h3 
-                        className="text-lg font-semibold mb-3 flex items-center"
-                        style={{ color: "var(--foreground)" }}
-                      >
-                        🏪 {supermarket}
-                        <span 
-                          className="ml-2 text-sm font-normal"
-                          style={{ color: "var(--text-secondary)" }}
+                    <div key={supermarket} className="space-y-3">
+                      {/* Header del supermercado - responsive */}
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-opacity-50 rounded-lg p-3" style={{ backgroundColor: "var(--background)" }}>
+                        <h3 
+                          className="text-lg sm:text-xl font-semibold flex items-center"
+                          style={{ color: "var(--foreground)" }}
                         >
-                          ({items.filter(p => p.comprado).length}/{items.length})
-                        </span>
-                      </h3>
-                      <div className="space-y-3">
+                          <span className="text-xl sm:text-2xl mr-2">🏪</span>
+                          <span className="break-words">{supermarket}</span>
+                        </h3>
+                        <div className="mt-1 sm:mt-0 flex items-center space-x-3">
+                          <span 
+                            className="text-sm sm:text-base font-medium px-3 py-1 rounded-full"
+                            style={{ 
+                              backgroundColor: "var(--primary)",
+                              color: "white"
+                            }}
+                          >
+                            {items.filter(p => p.comprado).length}/{items.length}
+                          </span>
+                          <span 
+                            className="text-xs sm:text-sm"
+                            style={{ color: "var(--text-secondary)" }}
+                          >
+                            {Math.round((items.filter(p => p.comprado).length / items.length) * 100)}% completado
+                          </span>
+                        </div>
+                      </div>
+                      {/* Lista de productos */}
+                      <div className="space-y-2 sm:space-y-3">
                         {items.map((item) => (
                           <div
                             key={item.id}
-                            className={`p-4 rounded-lg border transition-all cursor-pointer ${
+                            className={`rounded-lg border transition-all cursor-pointer ${
                               item.comprado ? 'opacity-60' : 'hover:shadow-md'
                             }`}
                             style={{ 
@@ -1106,55 +1132,96 @@ export default function Dashboard() {
                             }}
                             onClick={() => toggleProductPurchased(item.id, item.comprado)}
                           >
-                            <div className="flex items-center space-x-4">
-                              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                                item.comprado ? 'bg-green-500 border-green-500' : 'border-gray-300'
-                              }`}>
-                                {item.comprado && (
-                                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                                  </svg>
-                                )}
-                              </div>
-                              
-                              <div className="flex-1">
-                                <h4 
-                                  className={`font-medium ${item.comprado ? 'line-through' : ''}`}
-                                  style={{ color: "var(--foreground)" }}
-                                >
-                                  {item.productos.nombre}
-                                </h4>
-                                <div className="flex items-center space-x-4 text-sm mt-1" style={{ color: "var(--text-secondary)" }}>
-                                  <span>📦 Cantidad: {item.cantidad}</span>
-                                  {item.productos.categorias && (
-                                    <span>📂 {item.productos.categorias.nombre}</span>
-                                  )}
-                                  {item.productos.estante && (
-                                    <span>📍 Estante {item.productos.estante}</span>
-                                  )}
-                                  {item.productos.cara && (
-                                    <span>👉 {item.productos.cara}</span>
+                            {/* Layout responsive: mobile vs desktop */}
+                            <div className="p-3 sm:p-4">
+                              {/* Header del producto - siempre visible */}
+                              <div className="flex items-start space-x-3">
+                                {/* Checkbox */}
+                                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                                  item.comprado ? 'bg-green-500 border-green-500' : 'border-gray-300'
+                                }`}>
+                                  {item.comprado && (
+                                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
                                   )}
                                 </div>
-                                {item.productos.descripcion && (
-                                  <p 
-                                    className="text-sm mt-1"
-                                    style={{ color: "var(--text-muted)" }}
+                                
+                                {/* Contenido principal */}
+                                <div className="flex-1 min-w-0">
+                                  {/* Nombre del producto */}
+                                  <h4 
+                                    className={`font-medium text-base sm:text-lg leading-tight ${item.comprado ? 'line-through' : ''}`}
+                                    style={{ color: "var(--foreground)" }}
                                   >
-                                    {item.productos.descripcion}
-                                  </p>
-                                )}
-                              </div>
-
-                              {/* Indicador de estado */}
-                              <div className="text-right">
-                                {item.comprado ? (
-                                  <span className="text-green-500 text-sm font-medium">✓ Listo</span>
-                                ) : (
-                                  <span style={{ color: "var(--text-muted)" }} className="text-sm">
-                                    Toca para marcar
-                                  </span>
-                                )}
+                                    {item.productos.nombre}
+                                  </h4>
+                                  
+                                  {/* Información principal - Layout responsive */}
+                                  <div className="mt-2 space-y-1 sm:space-y-0">
+                                    {/* Primera línea: Cantidad + Categoría */}
+                                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm" style={{ color: "var(--text-secondary)" }}>
+                                      <span className="flex items-center">
+                                        <span className="mr-1">📦</span>
+                                        <span className="font-medium">Cantidad:</span>
+                                        <span className="ml-1">{item.cantidad}</span>
+                                      </span>
+                                      {item.productos.categorias && (
+                                        <span className="flex items-center">
+                                          <span className="mr-1">📂</span>
+                                          <span>{item.productos.categorias.nombre}</span>
+                                        </span>
+                                      )}
+                                    </div>
+                                    
+                                    {/* Segunda línea: Ubicación (solo si existe) */}
+                                    {(item.productos.estante || item.productos.cara) && (
+                                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm" style={{ color: "var(--text-secondary)" }}>
+                                        {item.productos.estante && (
+                                          <span className="flex items-center">
+                                            <span className="mr-1">📍</span>
+                                            <span>Estante {item.productos.estante}</span>
+                                          </span>
+                                        )}
+                                        {item.productos.cara && (
+                                          <span className="flex items-center">
+                                            <span className="mr-1">👉</span>
+                                            <span>{item.productos.cara}</span>
+                                          </span>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                  
+                                  {/* Descripción (si existe) */}
+                                  {item.productos.descripcion && (
+                                    <p 
+                                      className="text-sm mt-2 leading-relaxed"
+                                      style={{ color: "var(--text-muted)" }}
+                                    >
+                                      {item.productos.descripcion}
+                                    </p>
+                                  )}
+                                </div>
+                                
+                                {/* Indicador de estado */}
+                                <div className="flex-shrink-0 text-right">
+                                  {item.comprado ? (
+                                    <div className="text-center">
+                                      <div className="text-green-500 text-lg sm:text-xl">✓</div>
+                                      <span className="text-green-500 text-xs font-medium block sm:hidden">Listo</span>
+                                      <span className="text-green-500 text-sm font-medium hidden sm:block">Listo</span>
+                                    </div>
+                                  ) : (
+                                    <div className="text-center">
+                                      <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full border-2 border-dashed mx-auto mb-1" style={{ borderColor: "var(--text-muted)" }}></div>
+                                      <span style={{ color: "var(--text-muted)" }} className="text-xs sm:text-sm block">
+                                        <span className="sm:hidden">Tocar</span>
+                                        <span className="hidden sm:inline">Toca para marcar</span>
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </div>
