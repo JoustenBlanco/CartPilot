@@ -42,41 +42,64 @@ export const AuthProvider = ({ children }) => {
       return
     }
 
-    const { data, error } = await getUserProfile(userId)
-    if (!error && data) {
-      setProfile(data)
-    } else {
+    try {
+      const { data, error } = await getUserProfile(userId)
+      if (!error && data) {
+        setProfile(data)
+      } else {
+        console.warn('Error loading user profile:', error)
+        setProfile(null)
+      }
+    } catch (error) {
+      console.error('Exception loading user profile:', error)
       setProfile(null)
     }
   }
 
   useEffect(() => {
+    let timeoutId
+
     // Get initial session
     const getSession = async () => {
       try {
-        const result = await withAuthErrorHandling(async () => {
-          return await supabase.auth.getSession()
-        })
+        setLoading(true)
         
-        if (!result || !result.data) {
+        // Timeout de seguridad - si tarda más de 10 segundos, terminar loading
+        timeoutId = setTimeout(() => {
+          console.warn('Session loading timeout, setting loading to false')
+          setLoading(false)
+        }, 10000)
+        
+        // Obtener sesión directamente sin wrapper para evitar problemas
+        const { data: { session }, error } = await supabase.auth.getSession()
+        
+        if (error) {
+          console.error('Error getting session:', error.message)
+          // Manejar el error pero no bloquear
+          await handleAuthError(error)
           setUser(null)
           setProfile(null)
           setLoading(false)
+          clearTimeout(timeoutId)
           return
         }
         
-        const { data: { session } } = result
-        setUser(session?.user ?? null)
-        
         if (session?.user) {
+          setUser(session.user)
+          // Esperar a que termine de cargar el perfil antes de quitar el loading
           await loadUserProfile(session.user.id)
+        } else {
+          setUser(null)
+          setProfile(null)
         }
         
+        clearTimeout(timeoutId)
         setLoading(false)
       } catch (error) {
-        console.error('Error getting session:', error.message)
+        console.error('Error in getSession:', error.message)
         setUser(null)
         setProfile(null)
+        clearTimeout(timeoutId)
         setLoading(false)
       }
     }
@@ -86,6 +109,8 @@ export const AuthProvider = ({ children }) => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state change:', event, session ? 'has session' : 'no session')
+        
         // Manejar eventos específicos de error de token
         if (event === 'TOKEN_REFRESHED' && !session) {
           console.warn('Token refresh failed, clearing session')
@@ -103,6 +128,7 @@ export const AuthProvider = ({ children }) => {
           return
         }
 
+        // Para otros eventos, actualizar el estado
         setUser(session?.user ?? null)
         
         if (session?.user) {
@@ -115,8 +141,13 @@ export const AuthProvider = ({ children }) => {
       }
     )
 
-    return () => subscription?.unsubscribe()
-  }, [])
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
+      subscription?.unsubscribe()
+    }
+  }, []) // loadUserProfile es estable, no necesita dependencias
 
   const signUp = async (email, password, fullName) => {
     try {

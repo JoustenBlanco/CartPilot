@@ -4,10 +4,22 @@ import { useEffect, useState } from 'react'
 
 export default function LoadingScreen() {
   const [mounted, setMounted] = useState(false)
+  const [showTimeoutMessage, setShowTimeoutMessage] = useState(false)
 
   useEffect(() => {
     setMounted(true)
+    
+    // Mostrar mensaje de timeout después de 8 segundos
+    const timeoutTimer = setTimeout(() => {
+      setShowTimeoutMessage(true)
+    }, 8000)
+
+    return () => clearTimeout(timeoutTimer)
   }, [])
+
+  const handleRefresh = () => {
+    window.location.reload()
+  }
 
   return (
     <div 
@@ -102,6 +114,28 @@ export default function LoadingScreen() {
             }}
           ></div>
         </div>
+
+        {/* Mensaje de timeout */}
+        {showTimeoutMessage && (
+          <div className="mt-8 text-center animate-fade-in-up">
+            <p 
+              className="text-sm mb-4 opacity-70"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              La carga está tomando más tiempo del esperado...
+            </p>
+            <button
+              onClick={handleRefresh}
+              className="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:scale-105"
+              style={{ 
+                backgroundColor: 'var(--primary)',
+                color: 'white'
+              }}
+            >
+              Refrescar página
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

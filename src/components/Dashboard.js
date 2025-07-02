@@ -31,6 +31,10 @@ export default function Dashboard() {
   const [editingQuantity, setEditingQuantity] = useState(null); // ID del producto que se está editando
   const [tempQuantity, setTempQuantity] = useState(''); // Valor temporal durante la edición
 
+  // Estados para ordenamiento de productos
+  const [sortBy, setSortBy] = useState('default'); // 'default', 'estante', 'categoria'
+  const [sortOrder, setSortOrder] = useState('asc'); // 'asc', 'desc'
+
   // Función utilitaria para convertir fecha a formato local YYYY-MM-DD
   const dateToLocalString = (dateString) => {
     if (!dateString) return '';
@@ -45,6 +49,38 @@ export default function Dashboard() {
   const localStringToISODate = (localDateString) => {
     if (!localDateString) return '';
     return localDateString; // Ya está en formato YYYY-MM-DD
+  };
+
+  // Función para ordenar productos dentro de cada supermercado
+  const sortProducts = (products) => {
+    if (sortBy === 'default') return products;
+    
+    return [...products].sort((a, b) => {
+      let valueA, valueB;
+      
+      if (sortBy === 'estante') {
+        valueA = a.productos.estante || '';
+        valueB = b.productos.estante || '';
+        // Convertir a número si es posible, sino usar comparación de string
+        const numA = parseInt(valueA);
+        const numB = parseInt(valueB);
+        if (!isNaN(numA) && !isNaN(numB)) {
+          valueA = numA;
+          valueB = numB;
+        }
+      } else if (sortBy === 'categoria') {
+        valueA = a.productos.categorias?.nombre || '';
+        valueB = b.productos.categorias?.nombre || '';
+      }
+      
+      // Comparación
+      if (typeof valueA === 'number' && typeof valueB === 'number') {
+        return sortOrder === 'asc' ? valueA - valueB : valueB - valueA;
+      } else {
+        const comparison = valueA.toString().localeCompare(valueB.toString());
+        return sortOrder === 'asc' ? comparison : -comparison;
+      }
+    });
   };
 
   // Cargar listas del usuario
@@ -1158,6 +1194,68 @@ export default function Dashboard() {
               {/* Lista de productos agrupada por supermercado */}
               {currentList.productos && currentList.productos.length > 0 ? (
                 <div className="space-y-6">
+                  {/* Controles de ordenamiento */}
+                  <div 
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-opacity-50 rounded-lg p-4"
+                    style={{ backgroundColor: "var(--surface)" }}
+                  >
+                    <div className="flex items-center space-x-2 mb-3 sm:mb-0">
+                      <span 
+                        className="text-sm font-medium"
+                        style={{ color: "var(--foreground)" }}
+                      >
+                        Ordenar productos por:
+                      </span>
+                      <select
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value)}
+                        className="px-3 py-1 rounded-md border text-sm focus:outline-none focus:ring-2"
+                        style={{
+                          backgroundColor: "var(--background)",
+                          borderColor: "var(--border)",
+                          color: "var(--foreground)",
+                          "--tw-ring-color": "var(--primary)"
+                        }}
+                      >
+                        <option value="default">Orden original</option>
+                        <option value="estante">Estante</option>
+                        <option value="categoria">Categoría</option>
+                      </select>
+                    </div>
+                    
+                    {sortBy !== 'default' && (
+                      <div className="flex items-center space-x-2">
+                        <span 
+                          className="text-sm font-medium"
+                          style={{ color: "var(--foreground)" }}
+                        >
+                          Orden:
+                        </span>
+                        <button
+                          onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                          className="flex items-center space-x-1 px-3 py-1 rounded-md border transition-colors"
+                          style={{
+                            backgroundColor: "var(--background)",
+                            borderColor: "var(--border)",
+                            color: "var(--foreground)"
+                          }}
+                        >
+                          <span className="text-sm">
+                            {sortOrder === 'asc' ? 'Ascendente' : 'Descendente'}
+                          </span>
+                          <svg 
+                            className={`w-4 h-4 transition-transform ${sortOrder === 'desc' ? 'rotate-180' : ''}`} 
+                            fill="none" 
+                            stroke="currentColor" 
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 11l5-5m0 0l5 5m-5-5v12"></path>
+                          </svg>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
                   {/* Agrupar productos por supermercado */}
                   {Object.entries(
                     currentList.productos.reduce((groups, item) => {
@@ -1197,7 +1295,7 @@ export default function Dashboard() {
                       </div>
                       {/* Lista de productos */}
                       <div className="space-y-2 sm:space-y-3">
-                        {items.map((item) => (
+                        {sortProducts(items).map((item) => (
                           <div
                             key={item.id}
                             className={`rounded-lg border transition-all cursor-pointer ${
