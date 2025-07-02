@@ -2,8 +2,10 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
+import { useAlertHelpers } from "@/hooks/useAlertHelpers";
 
 export default function AddProductToList({ listId, onProductAdded, onClose, user }) {
+  const alerts = useAlertHelpers();
   const [searchTerm, setSearchTerm] = useState("");
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
@@ -33,8 +35,9 @@ export default function AddProductToList({ listId, onProductAdded, onClose, user
       setSupermarkets(supermarketsRes.data || []);
     } catch (error) {
       console.error('Error cargando datos:', error);
+      alerts.error('Error al cargar los datos. Por favor, intenta de nuevo.');
     }
-  }, [user]);
+  }, [user, alerts]);
 
   // Cargar productos, categorías y supermercados
   useEffect(() => {
@@ -90,11 +93,13 @@ export default function AddProductToList({ listId, onProductAdded, onClose, user
 
       if (error) throw error;
       
+      alerts.success(`Producto agregado correctamente a la lista`);
       onProductAdded && onProductAdded();
       setSearchTerm("");
       setFilteredProducts([]);
     } catch (error) {
       console.error('Error agregando producto:', error);
+      alerts.error('Error al agregar el producto. Por favor, intenta de nuevo.');
     } finally {
       setLoading(false);
     }
@@ -123,8 +128,10 @@ export default function AddProductToList({ listId, onProductAdded, onClose, user
       
       setShowCreateForm(false);
       setNewProductName("");
+      alerts.success('Nuevo producto creado correctamente');
     } catch (error) {
       console.error('Error creando producto:', error);
+      alerts.error('Error al crear el producto. Por favor, intenta de nuevo.');
     } finally {
       setLoading(false);
     }
@@ -412,9 +419,10 @@ function CreateProductForm({ initialName, categories, supermarkets, onSubmit, on
       setFormData({ ...formData, categoria_id: data.id });
       setNewCategoryName("");
       setShowNewCategoryInput(false);
+      alerts.success('Categoría creada exitosamente');
     } catch (error) {
       console.error('Error creando categoría:', error);
-      alert('Error al crear la categoría');
+      alerts.error('Error al crear la categoría');
     } finally {
       setCreating(false);
     }
@@ -442,9 +450,10 @@ function CreateProductForm({ initialName, categories, supermarkets, onSubmit, on
       setFormData({ ...formData, supermercado_id: data.id });
       setNewSupermarketName("");
       setShowNewSupermarketInput(false);
+      alerts.success('Supermercado creado exitosamente');
     } catch (error) {
       console.error('Error creando supermercado:', error);
-      alert('Error al crear el supermercado');
+      alerts.error('Error al crear el supermercado');
     } finally {
       setCreating(false);
     }
@@ -455,17 +464,17 @@ function CreateProductForm({ initialName, categories, supermarkets, onSubmit, on
     
     // Validaciones obligatorias
     if (!formData.nombre.trim()) {
-      alert("El nombre del producto es obligatorio");
+      alerts.warning("El nombre del producto es obligatorio");
       return;
     }
     
     if (!formData.categoria_id) {
-      alert("Debe seleccionar una categoría para el producto");
+      alerts.warning("Debe seleccionar una categoría para el producto");
       return;
     }
     
     if (!formData.supermercado_id) {
-      alert("Debe seleccionar un supermercado para el producto");
+      alerts.warning("Debe seleccionar un supermercado para el producto");
       return;
     }
     

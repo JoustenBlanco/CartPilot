@@ -1,9 +1,18 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/lib/supabase";
+import { useAlertHelpers } from "@/hooks/useAlertHelpers";
 
 export default function SettingsModal({ user, onClose }) {
+  const alerts = useAlertHelpers();
+  const alertsRef = useRef(alerts);
+  
+  // Actualizar la referencia cuando cambie alerts
+  useEffect(() => {
+    alertsRef.current = alerts;
+  }, [alerts]);
+  
   const [activeTab, setActiveTab] = useState("categories"); // 'categories' | 'supermarkets' | 'products'
   const [categories, setCategories] = useState([]);
   const [supermarkets, setSupermarkets] = useState([]);
@@ -39,6 +48,7 @@ export default function SettingsModal({ user, onClose }) {
       setCategories(data || []);
     } catch (error) {
       console.error("Error cargando categorías:", error);
+      alertsRef.current.error("Error al cargar las categorías");
     }
   }, [user]);
 
@@ -56,6 +66,7 @@ export default function SettingsModal({ user, onClose }) {
       setSupermarkets(data || []);
     } catch (error) {
       console.error("Error cargando supermercados:", error);
+      alertsRef.current.error("Error al cargar los supermercados");
     }
   }, [user]);
 
@@ -79,6 +90,7 @@ export default function SettingsModal({ user, onClose }) {
       setProducts(data || []);
     } catch (error) {
       console.error("Error cargando productos:", error);
+      alertsRef.current.error("Error al cargar los productos");
     }
   }, [user]);
 
@@ -104,10 +116,11 @@ export default function SettingsModal({ user, onClose }) {
       if (error) throw error;
 
       setNewCategoryName("");
+      alertsRef.current.success("Categoría creada exitosamente");
       loadCategories();
     } catch (error) {
       console.error("Error creando categoría:", error);
-      alert("Error al crear la categoría");
+      alertsRef.current.error("Error al crear la categoría");
     } finally {
       setLoading(false);
     }
@@ -129,10 +142,11 @@ export default function SettingsModal({ user, onClose }) {
       if (error) throw error;
 
       setNewSupermarketName("");
+      alertsRef.current.success("Supermercado creado exitosamente");
       loadSupermarkets();
     } catch (error) {
       console.error("Error creando supermercado:", error);
-      alert("Error al crear el supermercado");
+      alertsRef.current.error("Error al crear el supermercado");
     } finally {
       setLoading(false);
     }
@@ -153,10 +167,11 @@ export default function SettingsModal({ user, onClose }) {
       if (error) throw error;
 
       setEditingCategory(null);
+      alertsRef.current.success("Categoría actualizada exitosamente");
       loadCategories();
     } catch (error) {
       console.error("Error actualizando categoría:", error);
-      alert("Error al actualizar la categoría");
+      alertsRef.current.error("Error al actualizar la categoría");
     } finally {
       setLoading(false);
     }
@@ -177,10 +192,11 @@ export default function SettingsModal({ user, onClose }) {
       if (error) throw error;
 
       setEditingSupermarket(null);
+      alertsRef.current.success("Supermercado actualizado exitosamente");
       loadSupermarkets();
     } catch (error) {
       console.error("Error actualizando supermercado:", error);
-      alert("Error al actualizar el supermercado");
+      alertsRef.current.error("Error al actualizar el supermercado");
     } finally {
       setLoading(false);
     }
@@ -188,8 +204,8 @@ export default function SettingsModal({ user, onClose }) {
 
   // Eliminar categoría
   const deleteCategory = async (id) => {
-    if (!confirm("¿Estás seguro de que quieres eliminar esta categoría?"))
-      return;
+    const confirmed = await alertsRef.current.confirmDelete("esta categoría");
+    if (!confirmed) return;
 
     setLoading(true);
     try {
@@ -201,10 +217,11 @@ export default function SettingsModal({ user, onClose }) {
 
       if (error) throw error;
 
+      alertsRef.current.success("Categoría eliminada exitosamente");
       loadCategories();
     } catch (error) {
       console.error("Error eliminando categoría:", error);
-      alert(
+      alertsRef.current.error(
         "Error al eliminar la categoría. Puede que esté siendo usada por productos."
       );
     } finally {
@@ -214,8 +231,8 @@ export default function SettingsModal({ user, onClose }) {
 
   // Eliminar supermercado
   const deleteSupermarket = async (id) => {
-    if (!confirm("¿Estás seguro de que quieres eliminar este supermercado?"))
-      return;
+    const confirmed = await alertsRef.current.confirmDelete("este supermercado");
+    if (!confirmed) return;
 
     setLoading(true);
     try {
@@ -227,10 +244,11 @@ export default function SettingsModal({ user, onClose }) {
 
       if (error) throw error;
 
+      alertsRef.current.success("Supermercado eliminado exitosamente");
       loadSupermarkets();
     } catch (error) {
       console.error("Error eliminando supermercado:", error);
-      alert(
+      alertsRef.current.error(
         "Error al eliminar el supermercado. Puede que esté siendo usado por productos."
       );
     } finally {
@@ -244,17 +262,17 @@ export default function SettingsModal({ user, onClose }) {
   const createProduct = async () => {
     // Validaciones obligatorias
     if (!newProduct.nombre.trim()) {
-      alert("El nombre del producto es obligatorio");
+      alertsRef.current.warning("El nombre del producto es obligatorio");
       return;
     }
     
     if (!newProduct.categoria_id) {
-      alert("Debe seleccionar una categoría para el producto");
+      alertsRef.current.warning("Debe seleccionar una categoría para el producto");
       return;
     }
     
     if (!newProduct.supermercado_id) {
-      alert("Debe seleccionar un supermercado para el producto");
+      alertsRef.current.warning("Debe seleccionar un supermercado para el producto");
       return;
     }
     
@@ -286,10 +304,11 @@ export default function SettingsModal({ user, onClose }) {
         cara: "",
         foto_url: "",
       });
+      alertsRef.current.success("Producto creado exitosamente");
       loadProducts();
     } catch (error) {
       console.error("Error creando producto:", error);
-      alert("Error al crear el producto");
+      alertsRef.current.error("Error al crear el producto");
     } finally {
       setLoading(false);
     }
@@ -299,17 +318,17 @@ export default function SettingsModal({ user, onClose }) {
   const updateProduct = async (id, updatedProduct) => {
     // Validaciones obligatorias
     if (!updatedProduct.nombre || !updatedProduct.nombre.trim()) {
-      alert("El nombre del producto es obligatorio");
+      alertsRef.current.warning("El nombre del producto es obligatorio");
       return;
     }
     
     if (!updatedProduct.categoria_id) {
-      alert("Debe seleccionar una categoría para el producto");
+      alertsRef.current.warning("Debe seleccionar una categoría para el producto");
       return;
     }
     
     if (!updatedProduct.supermercado_id) {
-      alert("Debe seleccionar un supermercado para el producto");
+      alertsRef.current.warning("Debe seleccionar un supermercado para el producto");
       return;
     }
 
@@ -339,10 +358,11 @@ export default function SettingsModal({ user, onClose }) {
 
       setEditingProduct(null);
       setEditingProductData({});
+      alertsRef.current.success("Producto actualizado exitosamente");
       loadProducts();
     } catch (error) {
       console.error("Error actualizando producto:", error);
-      alert("Error al actualizar el producto");
+      alertsRef.current.error("Error al actualizar el producto");
     } finally {
       setLoading(false);
     }
@@ -350,8 +370,8 @@ export default function SettingsModal({ user, onClose }) {
 
   // Eliminar producto
   const deleteProduct = async (id) => {
-    if (!confirm("¿Estás seguro de que quieres eliminar este producto?"))
-      return;
+    const confirmed = await alertsRef.current.confirmDelete("este producto");
+    if (!confirmed) return;
 
     setLoading(true);
     try {
@@ -363,10 +383,11 @@ export default function SettingsModal({ user, onClose }) {
 
       if (error) throw error;
 
+      alertsRef.current.success("Producto eliminado exitosamente");
       loadProducts();
     } catch (error) {
       console.error("Error eliminando producto:", error);
-      alert(
+      alertsRef.current.error(
         "Error al eliminar el producto. Puede que esté siendo usado en listas."
       );
     } finally {

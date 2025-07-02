@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useAlertHelpers } from "@/hooks/useAlertHelpers";
 import { supabase } from "@/lib/supabase";
 import { sendNewListEmail, getListProductsForEmail } from "@/lib/email-helpers";
 import AddProductToList from "./AddProductToList";
@@ -12,6 +13,14 @@ import Navigation from "./Navigation";
 
 export default function Dashboard() {
   const { user, profile, signOut, loading } = useAuth();
+  const alerts = useAlertHelpers();
+  const alertsRef = useRef(alerts);
+  
+  // Actualizar la referencia cuando cambie alerts
+  useEffect(() => {
+    alertsRef.current = alerts;
+  }, [alerts]);
+  
   const [currentView, setCurrentView] = useState('main'); // 'main', 'list', 'create'
   const [lists, setLists] = useState([]);
   const [currentList, setCurrentList] = useState(null);
@@ -99,6 +108,7 @@ export default function Dashboard() {
       setLists(data || []);
     } catch (error) {
       console.error('Error cargando listas:', error);
+      alertsRef.current.error('Error al cargar las listas. Por favor intenta nuevamente');
     } finally {
       setLoadingData(false);
     }
@@ -121,6 +131,7 @@ export default function Dashboard() {
       setProducts(data || []);
     } catch (error) {
       console.error('Error cargando productos:', error);
+      alertsRef.current.error('Error al cargar productos');
     }
   }, [user]);
 
@@ -148,6 +159,7 @@ export default function Dashboard() {
       return data || [];
     } catch (error) {
       console.error('Error cargando productos de la lista:', error);
+      alertsRef.current.error('Error al cargar los productos de la lista');
       return [];
     }
   };
@@ -179,7 +191,11 @@ export default function Dashboard() {
 
   // Crear nueva lista
   const createList = async () => {
-    if (!newListName.trim() || !user) return;
+    if (!newListName.trim()) {
+      alerts.warning('Por favor ingresa un nombre para la lista');
+      return;
+    }
+    if (!user) return;
     
     try {
       const { data, error } = await supabase
@@ -208,19 +224,25 @@ export default function Dashboard() {
       } catch (emailError) {
         console.error('⚠️ Error enviando correo (lista creada exitosamente):', emailError);
         // No impedimos que la lista se cree si hay error en el correo
+        alerts.warning('Lista creada exitosamente, pero no se pudo enviar el correo de confirmación');
       }
       
       setNewListName("");
       setCurrentView('main');
       loadLists();
+      alerts.success(`Lista "${newListName}" creada exitosamente`);
     } catch (error) {
       console.error('Error creando lista:', error);
+      alerts.error('Error al crear la lista. Por favor intenta nuevamente');
     }
   };
 
   // Editar lista
   const updateList = async (listId, updatedData) => {
-    if (!updatedData.nombre || !updatedData.nombre.trim()) return;
+    if (!updatedData.nombre || !updatedData.nombre.trim()) {
+      alerts.warning('El nombre de la lista no puede estar vacío');
+      return;
+    }
     
     try {
       const { error } = await supabase
@@ -246,15 +268,21 @@ export default function Dashboard() {
           fecha: updatedData.fecha
         });
       }
+      
+      alerts.success('Lista actualizada correctamente');
     } catch (error) {
       console.error('Error actualizando lista:', error);
-      alert('Error al actualizar la lista');
+      alerts.error('Error al actualizar la lista');
     }
   };
 
   // Eliminar lista
   const deleteList = async (listId) => {
-    if (!confirm('¿Estás seguro de que quieres eliminar esta lista? Esta acción no se puede deshacer.')) return;
+    const listToDelete = lists.find(list => list.id === listId);
+    const listName = listToDelete?.nombre || 'esta lista';
+    
+    const confirmed = await alerts.confirmDelete(listName);
+    if (!confirmed) return;
     
     try {
       // Primero eliminar todos los productos de la lista
@@ -281,9 +309,10 @@ export default function Dashboard() {
       }
       
       loadLists();
+      alerts.success('Lista eliminada correctamente');
     } catch (error) {
       console.error('Error eliminando lista:', error);
-      alert('Error al eliminar la lista');
+      alerts.error('Error al eliminar la lista');
     }
   };
 
@@ -302,8 +331,16 @@ export default function Dashboard() {
         const updatedProducts = await loadListProducts(currentList.id);
         setCurrentList({ ...currentList, productos: updatedProducts });
       }
+      
+      // Mostrar mensaje apropiado
+      if (!currentStatus) {
+        alerts.success('Producto marcado como completado');
+      } else {
+        alerts.info('Producto desmarcado');
+      }
     } catch (error) {
       console.error('Error actualizando producto:', error);
+      alerts.error('Error al actualizar el estado del producto');
     }
   };
 
@@ -326,6 +363,7 @@ export default function Dashboard() {
       }
     } catch (error) {
       console.error('Error actualizando cantidad:', error);
+      alerts.error('Error al actualizar la cantidad del producto');
     }
   };
 
@@ -344,25 +382,25 @@ export default function Dashboard() {
     try {
       const quantity = parseInt(tempQuantity);
       if (isNaN(quantity) || quantity < 1) {
-        alert('La cantidad debe ser un número mayor a 0');
+        alerts.warning('La cantidad debe ser un número mayor a 0');
         return;
       }
 
       await updateProductQuantity(listProductId, quantity);
       setEditingQuantity(null);
       setTempQuantity('');
+      alerts.success('Cantidad actualizada correctamente');
     } catch (error) {
       console.error('Error al guardar cantidad:', error);
-      alert('Error al guardar la cantidad');
+      alerts.error('Error al guardar la cantidad');
     }
   };
 
   // Eliminar producto de la lista
   const removeProductFromList = async (listProductId, productName) => {
-    if (!confirm(`¿Estás seguro de que quieres eliminar "${productName}" de esta lista?`)) {
-      return;
-    }
-
+    const confirmed = await alerts.confirmDelete(productName);
+    if (!confirmed) return;
+    
     try {
       const { error } = await supabase
         .from('lista_productos')
@@ -374,53 +412,52 @@ export default function Dashboard() {
       // Actualizar la lista local
       const updatedProducts = currentList.productos.filter(item => item.id !== listProductId);
       setCurrentList({ ...currentList, productos: updatedProducts });
+      
+      alerts.success(`Producto "${productName}" eliminado de la lista`);
     } catch (error) {
       console.error('Error al eliminar producto:', error);
-      alert('Error al eliminar el producto de la lista');
+      alerts.error('Error al eliminar el producto de la lista');
     }
   };
 
   // Función mejorada para cerrar sesión
   const handleSignOut = async () => {
-    try {
-      // Confirmar con el usuario
-      if (!confirm('¿Estás seguro de que quieres cerrar sesión?')) {
-        return;
-      }
-
-      // Usar la función de signOut del hook
-      await signOut();
-      
-    } catch (error) {
-      console.error('Error durante el cierre de sesión:', error);
-      
-      // Si hay error, forzar cierre de sesión local
+    alerts.confirmLogout(async () => {
       try {
-        // Limpiar localStorage
-        const keys = Object.keys(localStorage);
-        keys.forEach(key => {
-          if (key.includes('supabase') || key.includes('sb-')) {
-            localStorage.removeItem(key);
-          }
-        });
+        // Usar la función de signOut del hook
+        await signOut();
+        alerts.success('Sesión cerrada correctamente');
+      } catch (error) {
+        console.error('Error durante el cierre de sesión:', error);
         
-        // Limpiar sessionStorage
-        const sessionKeys = Object.keys(sessionStorage);
-        sessionKeys.forEach(key => {
-          if (key.includes('supabase') || key.includes('sb-')) {
-            sessionStorage.removeItem(key);
-          }
-        });
-        
-        // Redirigir manualmente
-        window.location.href = '/';
-        
-      } catch (cleanupError) {
-        console.error('Error en limpieza manual:', cleanupError);
-        // Como última opción, recargar la página
-        window.location.reload();
+        // Si hay error, forzar cierre de sesión local
+        try {
+          // Limpiar localStorage
+          const keys = Object.keys(localStorage);
+          keys.forEach(key => {
+            if (key.includes('supabase') || key.includes('sb-')) {
+              localStorage.removeItem(key);
+            }
+          });
+          
+          // Limpiar sessionStorage
+          const sessionKeys = Object.keys(sessionStorage);
+          sessionKeys.forEach(key => {
+            if (key.includes('supabase') || key.includes('sb-')) {
+              sessionStorage.removeItem(key);
+            }
+          });
+          
+          // Redirigir manualmente
+          window.location.href = '/';
+          
+        } catch (cleanupError) {
+          console.error('Error en limpieza manual:', cleanupError);
+          // Como última opción, recargar la página
+          window.location.reload();
+        }
       }
-    }
+    });
   };
 
   // Abrir lista específica
