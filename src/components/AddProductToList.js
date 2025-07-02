@@ -12,6 +12,8 @@ export default function AddProductToList({ listId, onProductAdded, onClose, user
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [categories, setCategories] = useState([]);
   const [supermarkets, setSupermarkets] = useState([]);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [quantity, setQuantity] = useState(1);
 
   const loadData = useCallback(async () => {
     if (!user) return;
@@ -52,6 +54,27 @@ export default function AddProductToList({ listId, onProductAdded, onClose, user
     }
   }, [searchTerm, products]);
 
+  // Seleccionar producto para agregar (mostrar modal de cantidad)
+  const selectProduct = (product) => {
+    setSelectedProduct(product);
+    setQuantity(1);
+  };
+
+  // Cancelar selección de producto
+  const cancelProductSelection = () => {
+    setSelectedProduct(null);
+    setQuantity(1);
+  };
+
+  // Confirmar agregar producto con cantidad
+  const confirmAddProduct = async () => {
+    if (selectedProduct && quantity > 0) {
+      await addProductToList(selectedProduct.id, quantity);
+      setSelectedProduct(null);
+      setQuantity(1);
+    }
+  };
+
   // Agregar producto existente a la lista
   const addProductToList = async (productId, quantity = 1) => {
     setLoading(true);
@@ -85,13 +108,18 @@ export default function AddProductToList({ listId, onProductAdded, onClose, user
       const { data: newProduct, error: productError } = await supabase
         .from('productos')
         .insert([productData])
-        .select()
+        .select(`
+          *,
+          categorias (nombre),
+          supermercados (nombre)
+        `)
         .single();
 
       if (productError) throw productError;
 
-      // Agregar a la lista
-      await addProductToList(newProduct.id);
+      // Mostrar modal de cantidad para el nuevo producto
+      setSelectedProduct(newProduct);
+      setQuantity(1);
       
       setShowCreateForm(false);
       setNewProductName("");
@@ -156,7 +184,7 @@ export default function AddProductToList({ listId, onProductAdded, onClose, user
                       backgroundColor: "var(--background)",
                       borderColor: "var(--border)"
                     }}
-                    onClick={() => addProductToList(product.id)}
+                    onClick={() => selectProduct(product)}
                   >
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
@@ -245,6 +273,103 @@ export default function AddProductToList({ listId, onProductAdded, onClose, user
           />
         )}
       </div>
+
+      {/* Modal de cantidad */}
+      {selectedProduct && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60 p-4">
+          <div 
+            className="rounded-lg p-6 w-full max-w-sm"
+            style={{ backgroundColor: "var(--surface)" }}
+          >
+            <div className="text-center">
+              <h3 
+                className="text-lg font-semibold mb-2"
+                style={{ color: "var(--foreground)" }}
+              >
+                Agregar a la lista
+              </h3>
+              <p 
+                className="text-sm mb-4"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                {selectedProduct.nombre}
+              </p>
+              
+              <div className="mb-6">
+                <label 
+                  className="block text-sm font-medium mb-2"
+                  style={{ color: "var(--foreground)" }}
+                >
+                  Cantidad
+                </label>
+                <div className="flex items-center justify-center space-x-3">
+                  <button
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="w-10 h-10 rounded-full border flex items-center justify-center transition-colors"
+                    style={{ 
+                      borderColor: "var(--border)",
+                      color: "var(--text-secondary)"
+                    }}
+                    disabled={quantity <= 1}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 12H4"></path>
+                    </svg>
+                  </button>
+                  
+                  <input
+                    type="number"
+                    min="1"
+                    value={quantity}
+                    onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                    className="w-20 text-center text-xl font-semibold py-2 rounded-md border focus:outline-none focus:ring-2"
+                    style={{ 
+                      backgroundColor: "var(--background)",
+                      borderColor: "var(--border)",
+                      color: "var(--foreground)",
+                      "--tw-ring-color": "var(--primary)"
+                    }}
+                  />
+                  
+                  <button
+                    onClick={() => setQuantity(quantity + 1)}
+                    className="w-10 h-10 rounded-full border flex items-center justify-center transition-colors"
+                    style={{ 
+                      borderColor: "var(--border)",
+                      color: "var(--text-secondary)"
+                    }}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              
+              <div className="flex space-x-3">
+                <button
+                  onClick={cancelProductSelection}
+                  className="flex-1 px-4 py-2 rounded-md border transition-colors"
+                  style={{ 
+                    borderColor: "var(--border)",
+                    color: "var(--text-secondary)"
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmAddProduct}
+                  disabled={loading}
+                  className="flex-1 px-4 py-2 rounded-md text-white transition-colors disabled:opacity-50"
+                  style={{ backgroundColor: "var(--primary)" }}
+                >
+                  {loading ? 'Agregando...' : 'Agregar'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

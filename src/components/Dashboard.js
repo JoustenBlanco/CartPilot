@@ -26,6 +26,10 @@ export default function Dashboard() {
   const [editingList, setEditingList] = useState(null);
   const [editingListData, setEditingListData] = useState({});
   const [showListActions, setShowListActions] = useState(null); // Para mostrar menú de acciones
+  
+  // Estados para edición de cantidad de productos
+  const [editingQuantity, setEditingQuantity] = useState(null); // ID del producto que se está editando
+  const [tempQuantity, setTempQuantity] = useState(''); // Valor temporal durante la edición
 
   // Función utilitaria para convertir fecha a formato local YYYY-MM-DD
   const dateToLocalString = (dateString) => {
@@ -246,6 +250,79 @@ export default function Dashboard() {
       }
     } catch (error) {
       console.error('Error actualizando producto:', error);
+    }
+  };
+
+  // Actualizar cantidad de producto
+  const updateProductQuantity = async (listProductId, newQuantity) => {
+    if (newQuantity === '' || isNaN(newQuantity)) return; // Ignorar si la cantidad es vacía o no es un número
+    
+    try {
+      const { error } = await supabase
+        .from('lista_productos')
+        .update({ cantidad: parseInt(newQuantity) })
+        .eq('id', listProductId);
+      
+      if (error) throw error;
+      
+      // Actualizar lista actual en el estado
+      if (currentList) {
+        const updatedProducts = await loadListProducts(currentList.id);
+        setCurrentList({ ...currentList, productos: updatedProducts });
+      }
+    } catch (error) {
+      console.error('Error actualizando cantidad:', error);
+    }
+  };
+
+  // Funciones para editar cantidad inline
+  const startEditingQuantity = (listProductId, currentQuantity) => {
+    setEditingQuantity(listProductId);
+    setTempQuantity(currentQuantity.toString());
+  };
+
+  const cancelEditingQuantity = () => {
+    setEditingQuantity(null);
+    setTempQuantity('');
+  };
+
+  const saveQuantity = async (listProductId) => {
+    try {
+      const quantity = parseInt(tempQuantity);
+      if (isNaN(quantity) || quantity < 1) {
+        alert('La cantidad debe ser un número mayor a 0');
+        return;
+      }
+
+      await updateProductQuantity(listProductId, quantity);
+      setEditingQuantity(null);
+      setTempQuantity('');
+    } catch (error) {
+      console.error('Error al guardar cantidad:', error);
+      alert('Error al guardar la cantidad');
+    }
+  };
+
+  // Eliminar producto de la lista
+  const removeProductFromList = async (listProductId, productName) => {
+    if (!confirm(`¿Estás seguro de que quieres eliminar "${productName}" de esta lista?`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('lista_productos')
+        .delete()
+        .eq('id', listProductId);
+
+      if (error) throw error;
+
+      // Actualizar la lista local
+      const updatedProducts = currentList.productos.filter(item => item.id !== listProductId);
+      setCurrentList({ ...currentList, productos: updatedProducts });
+    } catch (error) {
+      console.error('Error al eliminar producto:', error);
+      alert('Error al eliminar el producto de la lista');
     }
   };
 
@@ -1161,11 +1238,68 @@ export default function Dashboard() {
                                   <div className="mt-2 space-y-1 sm:space-y-0">
                                     {/* Primera línea: Cantidad + Categoría */}
                                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm" style={{ color: "var(--text-secondary)" }}>
-                                      <span className="flex items-center">
+                                      {/* Cantidad editable */}
+                                      <div className="flex items-center">
                                         <span className="mr-1">📦</span>
-                                        <span className="font-medium">Cantidad:</span>
-                                        <span className="ml-1">{item.cantidad}</span>
-                                      </span>
+                                        <span className="font-medium mr-1">Cantidad:</span>
+                                        {editingQuantity === item.id ? (
+                                          <div className="flex items-center space-x-2" onClick={(e) => e.stopPropagation()}>
+                                            <input
+                                              type="number"
+                                              min="1"
+                                              value={tempQuantity}
+                                              onChange={(e) => setTempQuantity(e.target.value)}
+                                              className="w-16 px-2 py-1 text-sm border rounded focus:outline-none focus:ring-2"
+                                              style={{
+                                                backgroundColor: "var(--background)",
+                                                borderColor: "var(--border)",
+                                                color: "var(--foreground)",
+                                                "--tw-ring-color": "var(--primary)"
+                                              }}
+                                              onKeyPress={(e) => {
+                                                if (e.key === 'Enter') {
+                                                  saveQuantity(item.id);
+                                                } else if (e.key === 'Escape') {
+                                                  cancelEditingQuantity();
+                                                }
+                                              }}
+                                              autoFocus
+                                            />
+                                            <button
+                                              onClick={() => saveQuantity(item.id)}
+                                              className="p-1 text-green-600 hover:bg-green-100 rounded transition-colors"
+                                              title="Guardar"
+                                            >
+                                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                                              </svg>
+                                            </button>
+                                            <button
+                                              onClick={cancelEditingQuantity}
+                                              className="p-1 text-red-600 hover:bg-red-100 rounded transition-colors"
+                                              title="Cancelar"
+                                            >
+                                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                                              </svg>
+                                            </button>
+                                          </div>
+                                        ) : (
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              startEditingQuantity(item.id, item.cantidad);
+                                            }}
+                                            className="flex items-center space-x-1 px-2 py-1 rounded hover:bg-gray-100 transition-colors"
+                                            title="Editar cantidad"
+                                          >
+                                            <span>{item.cantidad}</span>
+                                            <svg className="w-3 h-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                            </svg>
+                                          </button>
+                                        )}
+                                      </div>
                                       {item.productos.categorias && (
                                         <span className="flex items-center">
                                           <span className="mr-1">📂</span>
@@ -1204,23 +1338,51 @@ export default function Dashboard() {
                                   )}
                                 </div>
                                 
-                                {/* Indicador de estado */}
-                                <div className="flex-shrink-0 text-right">
-                                  {item.comprado ? (
-                                    <div className="text-center">
-                                      <div className="text-green-500 text-lg sm:text-xl">✓</div>
-                                      <span className="text-green-500 text-xs font-medium block sm:hidden">Listo</span>
-                                      <span className="text-green-500 text-sm font-medium hidden sm:block">Listo</span>
-                                    </div>
-                                  ) : (
-                                    <div className="text-center">
-                                      <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full border-2 border-dashed mx-auto mb-1" style={{ borderColor: "var(--text-muted)" }}></div>
-                                      <span style={{ color: "var(--text-muted)" }} className="text-xs sm:text-sm block">
-                                        <span className="sm:hidden">Tocar</span>
-                                        <span className="hidden sm:inline">Toca para marcar</span>
-                                      </span>
-                                    </div>
-                                  )}
+                                {/* Indicador de estado y acciones */}
+                                <div className="flex-shrink-0 flex flex-col items-center space-y-2">
+                                  {/* Botón eliminar - siempre visible */}
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      removeProductFromList(item.id, item.productos.nombre);
+                                    }}
+                                    className="p-1.5 rounded-full transition-all hover:scale-110 shadow-sm border"
+                                    style={{
+                                      backgroundColor: "var(--surface)",
+                                      borderColor: "var(--error)",
+                                      color: "var(--error)"
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.target.style.backgroundColor = "var(--error)";
+                                      e.target.style.color = "white";
+                                      e.target.style.transform = "scale(1.1)";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.target.style.backgroundColor = "var(--surface)";
+                                      e.target.style.color = "var(--error)";
+                                      e.target.style.transform = "scale(1)";
+                                    }}
+                                    title="Eliminar de la lista"
+                                  >
+                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                  </button>
+                                  
+                                  {/* Estado del producto */}
+                                  <div className="text-center">
+                                    {item.comprado && (
+                                      <div>
+                                        <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center mx-auto mb-1">
+                                          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                                          </svg>
+                                        </div>
+                                        <span className="text-green-500 text-xs font-medium block sm:hidden">Listo</span>
+                                        <span className="text-green-500 text-sm font-medium hidden sm:block">Listo</span>
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             </div>
