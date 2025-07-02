@@ -193,8 +193,8 @@ export default function LandingPage() {
             </h1>
             
             <p className="mt-6 text-xl sm:text-2xl max-w-3xl mx-auto leading-relaxed" style={styles.heroSubtitle}>
-              CartPilot te ayuda a organizar, comparar y optimizar tus compras.
-              Nunca más olvides un producto o pagues de más.
+              CartPilot te ayuda a organizar y optimizar tus compras.
+              Nunca más olvides un producto o te pierdas buscando uno.
             </p>
             
             <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -254,15 +254,15 @@ export default function LandingPage() {
             <div className="text-center p-8 rounded-2xl transition-transform hover:scale-105" style={styles.surface}>
               <div className="w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-6" style={styles.primaryColor}>
                 <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                  <path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-5.14-4.03-9-9-9zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" />
                 </svg>
               </div>
               <h3 className="text-xl font-semibold mb-4" style={styles.foreground}>
-                Comparación de Precios
+                Interfaz Intuitiva
               </h3>
               <p style={styles.textSecondary}>
-                Compara precios entre diferentes tiendas y encuentra las mejores
-                ofertas para ahorrar dinero.
+                Diseño moderno y fácil de usar. Crea listas, marca productos como 
+                comprados y navega sin complicaciones.
               </p>
             </div>
 
@@ -270,15 +270,15 @@ export default function LandingPage() {
             <div className="text-center p-8 rounded-2xl transition-transform hover:scale-105" style={styles.surface}>
               <div className="w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-6" style={styles.primaryColor}>
                 <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z" />
+                  <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
                 </svg>
               </div>
               <h3 className="text-xl font-semibold mb-4" style={styles.foreground}>
-                Historial y Análisis
+                Recordatorios por Email
               </h3>
               <p style={styles.textSecondary}>
-                Revisa tu historial de compras y obtén insights sobre tus
-                patrones de consumo.
+                Recibe notificaciones de tus listas para que nunca olvides 
+                hacer tus compras importantes.
               </p>
             </div>
           </div>
@@ -307,11 +307,146 @@ export default function LandingPage() {
       </div>
 
       {/* Footer */}
-      <footer className="py-12" style={styles.backgroundSecondary}>
-        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-          <p className="text-sm" style={styles.textMuted}>
-            © 2025 CartPilot. Todos los derechos reservados.
-          </p>
+      <footer className="py-16" style={styles.backgroundSecondary}>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
+            {/* Brand Section */}
+            <div className="text-center md:text-left">
+              <div className="flex items-center justify-center md:justify-start mb-4">
+                <Image
+                  src="/images/logo.png"
+                  alt="CartPilot Logo"
+                  width={32}
+                  height={32}
+                  className="w-8 h-8"
+                />
+                <GradientText
+                  colors={["#ff8e01", "#ffb03f", "#d47300", "#ffb03f", "#ff8e01"]}
+                  animationSpeed={10}
+                  showBorder={false}
+                  className="text-xl font-bold ml-1"
+                >
+                  CartPilot
+                </GradientText>
+              </div>
+              <p className="text-sm leading-relaxed max-w-sm mx-auto md:mx-0" style={styles.textSecondary}>
+                Tu asistente inteligente para compras organizadas. Simplificamos la manera 
+                en que planificas y realizas tus compras diarias.
+              </p>
+            </div>
+
+            {/* Quick Links */}
+            <div className="text-center">
+              <h4 className="text-lg font-semibold mb-4" style={styles.foreground}>
+                Enlaces Rápidos
+              </h4>
+              <div className="space-y-3">
+                <button 
+                  onClick={handleLogin}
+                  className="block w-full text-sm transition-colors hover:text-orange-400"
+                  style={styles.textSecondary}
+                >
+                  Iniciar Sesión
+                </button>
+                <button 
+                  onClick={handleSignup}
+                  className="block w-full text-sm transition-colors hover:text-orange-400"
+                  style={styles.textSecondary}
+                >
+                  Crear Cuenta
+                </button>
+                <a 
+                  href="#features" 
+                  className="block w-full text-sm transition-colors hover:text-orange-400"
+                  style={styles.textSecondary}
+                >
+                  Características
+                </a>
+              </div>
+            </div>
+
+            {/* Developer & Contact */}
+            <div className="text-center md:text-right">
+              <h4 className="text-lg font-semibold mb-4" style={styles.foreground}>
+                Desarrollador
+              </h4>
+              <p className="text-sm mb-4" style={styles.textSecondary}>
+                Desarrollado por{" "}
+                <span className="font-medium text-orange-400">Jousten Blanco</span>
+              </p>
+              
+              {/* Social Links */}
+              <div className="flex justify-center md:justify-end space-x-4">
+                <a
+                  href="https://github.com/JoustenBlanco"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2 rounded-full transition-all hover:scale-110"
+                  style={{
+                    backgroundColor: "var(--surface)",
+                    color: "var(--text-secondary)"
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.backgroundColor = "var(--primary)";
+                    e.target.style.color = "white";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.backgroundColor = "var(--surface)";
+                    e.target.style.color = "var(--text-secondary)";
+                  }}
+                  title="GitHub"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 0C5.374 0 0 5.373 0 12 0 17.302 3.438 21.8 8.207 23.387c.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/>
+                  </svg>
+                </a>
+                
+                <a
+                  href="https://www.linkedin.com/in/jousten-blanco-409ab8301/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2 rounded-full transition-all hover:scale-110"
+                  style={{
+                    backgroundColor: "var(--surface)",
+                    color: "var(--text-secondary)"
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.backgroundColor = "var(--primary)";
+                    e.target.style.color = "white";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.backgroundColor = "var(--surface)";
+                    e.target.style.color = "var(--text-secondary)";
+                  }}
+                  title="LinkedIn"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                  </svg>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Section */}
+          <div className="pt-8 border-t" style={{ borderColor: "var(--border)" }}>
+            <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+              <p className="text-sm" style={styles.textMuted}>
+                © 2025 CartPilot. Todos los derechos reservados.
+              </p>
+              <div className="flex space-x-6 text-sm">
+                <a href="#" className="transition-colors hover:text-orange-400" style={styles.textMuted}>
+                  Privacidad
+                </a>
+                <a href="#" className="transition-colors hover:text-orange-400" style={styles.textMuted}>
+                  Términos
+                </a>
+                <a href="#" className="transition-colors hover:text-orange-400" style={styles.textMuted}>
+                  Soporte
+                </a>
+              </div>
+            </div>
+          </div>
         </div>
       </footer>
     </div>
