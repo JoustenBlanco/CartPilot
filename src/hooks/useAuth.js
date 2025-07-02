@@ -195,12 +195,57 @@ export const AuthProvider = ({ children }) => {
   const signOut = async () => {
     try {
       setLoading(true)
-      const { error } = await supabase.auth.signOut()
-      if (error) throw error
+      
+      // Intentar cerrar sesión con Supabase
+      const { error } = await supabase.auth.signOut({
+        scope: 'local' // Solo cerrar sesión local, no global
+      })
+      
+      // Si hay un error, lo loggeamos pero no impedimos la limpieza local
+      if (error) {
+        console.warn('Error cerrando sesión en servidor:', error.message)
+        
+        // Si es un error de sesión faltante, intentar con signOut sin parámetros
+        if (error.message.includes('Auth session missing')) {
+          try {
+            await supabase.auth.signOut()
+          } catch (retryError) {
+            console.warn('Retry signOut también falló:', retryError.message)
+          }
+        }
+      }
+      
     } catch (error) {
       console.error('Error signing out:', error.message)
     } finally {
+      // Siempre limpiar el estado local, independientemente de si hubo errores
+      setUser(null)
+      setProfile(null)
       setLoading(false)
+      
+      // Limpiar datos del localStorage si existen
+      try {
+        const keys = Object.keys(localStorage);
+        keys.forEach(key => {
+          if (key.includes('supabase') || key.includes('sb-')) {
+            localStorage.removeItem(key);
+          }
+        });
+        
+        const sessionKeys = Object.keys(sessionStorage);
+        sessionKeys.forEach(key => {
+          if (key.includes('supabase') || key.includes('sb-')) {
+            sessionStorage.removeItem(key);
+          }
+        });
+      } catch (e) {
+        console.warn('Error limpiando storage:', e.message);
+      }
+      
+      // Redirigir a la página de inicio
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 100);
     }
   }
 
