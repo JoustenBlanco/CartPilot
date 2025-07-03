@@ -65,14 +65,14 @@ export const AuthProvider = ({ children }) => {
     try {
       console.log("🔄 Llamando a getUserProfile...");
 
-      // Crear una promesa con timeout
+      // Crear una promesa con timeout más corto para mejor UX
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("Timeout loading profile")), 10000); // 10 segundos
+        setTimeout(() => reject(new Error("Timeout loading profile")), 8000); // 8 segundos
       });
 
       const profilePromise = getUserProfile(userId);
 
-      // Usar Promise.race para que falle si tarda más de 10 segundos
+      // Usar Promise.race para que falle si tarda más de 8 segundos
       const { data, error } = await Promise.race([
         profilePromise,
         timeoutPromise,
@@ -81,7 +81,10 @@ export const AuthProvider = ({ children }) => {
       console.log("📄 getUserProfile response:", { hasData: !!data, error });
 
       if (!error && data) {
-        console.log("✅ Perfil cargado exitosamente:", data);
+        console.log(
+          "✅ Perfil cargado exitosamente:",
+          data.full_name || "Sin nombre"
+        );
         setProfile(data);
       } else {
         console.warn("⚠️ Error loading profile:", error);
@@ -91,10 +94,9 @@ export const AuthProvider = ({ children }) => {
       console.error("💥 Exception loading user profile:", error);
       setProfile(null);
 
-      // Si es timeout, establecer un perfil básico para no bloquear la app
+      // Si es timeout, continuar sin bloquear la app
       if (error.message.includes("Timeout")) {
         console.log("⏰ Timeout detectado, continuando sin perfil");
-        setProfile(null);
       }
     }
 
@@ -103,60 +105,73 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     console.log("🚀 useEffect INICIADO - isAuthenticating:", isAuthenticating);
+
+    let mounted = true;
+    let initialLoadComplete = false;
     let timeoutId;
 
     // Get initial session
     const getSession = async () => {
+      if (!mounted) return;
+
       console.log("🔄 getSession INICIADO");
       try {
         console.log("🔄 Setting loading to true");
         setLoading(true);
 
         console.log("🔄 Calling supabase.auth.getSession()...");
-        // Obtener sesión directamente sin wrapper para evitar problemas
         const {
           data: { session },
           error,
         } = await supabase.auth.getSession();
 
+        if (!mounted) return; // Verificar si aún está montado
+
         console.log("📄 getSession response:", { session: !!session, error });
 
         if (error) {
           console.log("❌ Error en getSession:", error.message);
-          console.error("Error getting session:", error.message);
-
-          // Manejar el error pero no bloquear
           await handleAuthError(error);
           setUser(null);
           setProfile(null);
           setLoading(false);
-          clearTimeout(timeoutId);
+          initialLoadComplete = true;
           return;
         }
 
         if (session?.user) {
           console.log("✅ Session found en getSession:", session.user.id);
           setUser(session.user);
-          // Esperar a que termine de cargar el perfil antes de quitar el loading
-          await loadUserProfile(session.user.id);
+
+          try {
+            await loadUserProfile(session.user.id);
+          } catch (error) {
+            console.error("❌ Error loading profile en getSession:", error);
+            setProfile(null);
+          }
         } else {
           console.log("ℹ️ No session found en getSession");
           setUser(null);
           setProfile(null);
         }
 
-        clearTimeout(timeoutId);
-        console.log("✅ getSession terminando - setting loading to false");
-        setLoading(false);
+        if (mounted) {
+          console.log("✅ getSession terminando - setting loading to false");
+          setLoading(false);
+          initialLoadComplete = true;
+        }
       } catch (error) {
         console.error("💥 Exception en getSession:", error.message);
-        setUser(null);
-        setProfile(null);
-        clearTimeout(timeoutId);
-        setLoading(false);
+        if (mounted) {
+          setUser(null);
+          setProfile(null);
+          setLoading(false);
+          initialLoadComplete = true;
+        }
       }
     };
 
+    // Ejecutar getSession
     console.log("🔄 Llamando a getSession()...");
     getSession();
 
@@ -164,16 +179,28 @@ export const AuthProvider = ({ children }) => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
+
       console.log(
         "🔔 Auth state change:",
         event,
         session ? "has session" : "no session",
         "isAuthenticating:",
-        isAuthenticating
+        isAuthenticating,
+        "initialLoadComplete:",
+        initialLoadComplete
       );
 
+      // Ignorar ciertos eventos durante la carga inicial para evitar race conditions
+      if (
+        !initialLoadComplete &&
+        (event === "SIGNED_IN" || event === "INITIAL_SESSION")
+      ) {
+        console.log("⏳ Ignorando evento durante carga inicial:", event);
+        return;
+      }
+
       // Ignorar cambios de estado durante el proceso de autenticación manual
-      // para evitar redirecciones no deseadas cuando hay errores
       if (isAuthenticating && event === "SIGNED_OUT") {
         console.log("⏭️ Ignorando SIGNED_OUT durante autenticación manual");
         return;
@@ -197,10 +224,16 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
-      // Para eventos de login exitoso, siempre actualizar
-      if (event === "SIGNED_IN" && session?.user) {
+      // Para eventos de login exitoso después de la carga inicial
+      if (event === "SIGNED_IN" && session?.user && initialLoadComplete) {
         console.log("✅ Procesando SIGNED_IN event");
         setUser(session.user);
+
+        // Timeout de seguridad para evitar que se quede colgado
+        const authTimeoutId = setTimeout(() => {
+          console.log("⏰ Timeout en SIGNED_IN, terminando loading");
+          if (mounted) setLoading(false);
+        }, 15000); // 15 segundos
 
         try {
           console.log("🔄 Cargando perfil en SIGNED_IN...");
@@ -210,25 +243,37 @@ export const AuthProvider = ({ children }) => {
           console.error("❌ Error cargando perfil en SIGNED_IN:", error);
           setProfile(null);
         } finally {
-          console.log("🏁 Terminando SIGNED_IN - setting loading to false");
-          setLoading(false);
+          clearTimeout(authTimeoutId);
+          if (mounted) {
+            console.log("🏁 Terminando SIGNED_IN - setting loading to false");
+            setLoading(false);
+          }
         }
         return;
       }
 
       // Para otros eventos, actualizar el estado solo si no estamos autenticando
-      if (!isAuthenticating) {
+      if (!isAuthenticating && initialLoadComplete) {
         console.log("🔄 Procesando otros eventos - no authenticating");
         setUser(session?.user ?? null);
 
         if (session?.user) {
+          // Timeout de seguridad
+          const otherTimeoutId = setTimeout(() => {
+            console.log("⏰ Timeout en otros eventos, terminando loading");
+            if (mounted) setLoading(false);
+          }, 15000);
+
           try {
             await loadUserProfile(session.user.id);
           } catch (error) {
             console.error("❌ Error loading profile en otros eventos:", error);
             setProfile(null);
           } finally {
-            setLoading(false);
+            clearTimeout(otherTimeoutId);
+            if (mounted) {
+              setLoading(false);
+            }
           }
         } else {
           setProfile(null);
@@ -237,11 +282,16 @@ export const AuthProvider = ({ children }) => {
       }
     });
 
+    // Cleanup function
     return () => {
       console.log("🧹 useEffect cleanup");
+      mounted = false;
+      initialLoadComplete = false;
+
       if (timeoutId) {
         clearTimeout(timeoutId);
       }
+
       subscription?.unsubscribe();
     };
   }, [isAuthenticating]);
