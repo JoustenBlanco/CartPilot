@@ -42,7 +42,6 @@ export default function Dashboard() {
   const [tempQuantity, setTempQuantity] = useState(''); // Valor temporal durante la edición
 
   // Estados para ordenamiento de productos
-  const [sortBy, setSortBy] = useState('default'); // 'default', 'estante', 'categoria'
   const [sortOrder, setSortOrder] = useState('asc'); // 'asc', 'desc'
 
   // Función utilitaria para convertir fecha a formato local YYYY-MM-DD
@@ -73,33 +72,32 @@ export default function Dashboard() {
 
   // Función para ordenar productos dentro de cada supermercado
   const sortProducts = (products) => {
-    if (sortBy === 'default') return products;
-    
     return [...products].sort((a, b) => {
-      let valueA, valueB;
+      // Primer criterio: Estante
+      const estanteA = a.productos.estante || '';
+      const estanteB = b.productos.estante || '';
       
-      if (sortBy === 'estante') {
-        valueA = a.productos.estante || '';
-        valueB = b.productos.estante || '';
-        // Convertir a número si es posible, sino usar comparación de string
-        const numA = parseInt(valueA);
-        const numB = parseInt(valueB);
-        if (!isNaN(numA) && !isNaN(numB)) {
-          valueA = numA;
-          valueB = numB;
-        }
-      } else if (sortBy === 'categoria') {
-        valueA = a.productos.categorias?.nombre || '';
-        valueB = b.productos.categorias?.nombre || '';
-      }
+      // Convertir estantes a números si es posible
+      const numEstanteA = parseInt(estanteA);
+      const numEstanteB = parseInt(estanteB);
       
-      // Comparación
-      if (typeof valueA === 'number' && typeof valueB === 'number') {
-        return sortOrder === 'asc' ? valueA - valueB : valueB - valueA;
+      let estanteComparison = 0;
+      if (!isNaN(numEstanteA) && !isNaN(numEstanteB)) {
+        estanteComparison = numEstanteA - numEstanteB;
       } else {
-        const comparison = valueA.toString().localeCompare(valueB.toString());
-        return sortOrder === 'asc' ? comparison : -comparison;
+        estanteComparison = estanteA.toString().localeCompare(estanteB.toString());
       }
+      
+      if (estanteComparison !== 0) {
+        return sortOrder === 'asc' ? estanteComparison : -estanteComparison;
+      }
+      
+      // Segundo criterio: Cara
+      const caraA = a.productos.cara || '';
+      const caraB = b.productos.cara || '';
+      const caraComparison = caraA.toString().localeCompare(caraB.toString());
+      
+      return sortOrder === 'asc' ? caraComparison : -caraComparison;
     });
   };
 
@@ -1212,56 +1210,39 @@ export default function Dashboard() {
                         className="text-sm font-medium"
                         style={{ color: "var(--foreground)" }}
                       >
-                        Ordenar productos por:
+                        Ordenamiento por: Supermercado → Estante → Cara
                       </span>
-                      <select
-                        value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value)}
-                        className="px-3 py-1 rounded-md border text-sm focus:outline-none focus:ring-2"
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <span 
+                        className="text-sm font-medium"
+                        style={{ color: "var(--foreground)" }}
+                      >
+                        Orden:
+                      </span>
+                      <button
+                        onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                        className="flex items-center space-x-1 px-3 py-1 rounded-md border transition-colors"
                         style={{
                           backgroundColor: "var(--background)",
                           borderColor: "var(--border)",
-                          color: "var(--foreground)",
-                          "--tw-ring-color": "var(--primary)"
+                          color: "var(--foreground)"
                         }}
                       >
-                        <option value="default">Orden original</option>
-                        <option value="estante">Estante</option>
-                        <option value="categoria">Categoría</option>
-                      </select>
-                    </div>
-                    
-                    {sortBy !== 'default' && (
-                      <div className="flex items-center space-x-2">
-                        <span 
-                          className="text-sm font-medium"
-                          style={{ color: "var(--foreground)" }}
-                        >
-                          Orden:
+                        <span className="text-sm">
+                          {sortOrder === 'asc' ? 'Ascendente' : 'Descendente'}
                         </span>
-                        <button
-                          onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                          className="flex items-center space-x-1 px-3 py-1 rounded-md border transition-colors"
-                          style={{
-                            backgroundColor: "var(--background)",
-                            borderColor: "var(--border)",
-                            color: "var(--foreground)"
-                          }}
+                        <svg 
+                          className={`w-4 h-4 transition-transform ${sortOrder === 'desc' ? 'rotate-180' : ''}`} 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
                         >
-                          <span className="text-sm">
-                            {sortOrder === 'asc' ? 'Ascendente' : 'Descendente'}
-                          </span>
-                          <svg 
-                            className={`w-4 h-4 transition-transform ${sortOrder === 'desc' ? 'rotate-180' : ''}`} 
-                            fill="none" 
-                            stroke="currentColor" 
-                            viewBox="0 0 24 24"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 11l5-5m0 0l5 5m-5-5v12"></path>
-                          </svg>
-                        </button>
-                      </div>
-                    )}
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 11l5-5m0 0l5 5m-5-5v12"></path>
+                        </svg>
+                      </button>
+                    </div>
                   </div>
 
                   {/* Agrupar productos por supermercado */}
@@ -1272,7 +1253,11 @@ export default function Dashboard() {
                       groups[supermarket].push(item);
                       return groups;
                     }, {})
-                  ).map(([supermarket, items]) => (
+                  ).sort(([supermarketA], [supermarketB]) => {
+                    // Ordenar supermercados alfabéticamente
+                    const comparison = supermarketA.localeCompare(supermarketB);
+                    return sortOrder === 'asc' ? comparison : -comparison;
+                  }).map(([supermarket, items]) => (
                     <div key={supermarket} className="space-y-3">
                       {/* Header del supermercado - responsive */}
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-opacity-50 rounded-lg p-3" style={{ backgroundColor: "var(--background)" }}>

@@ -982,15 +982,13 @@ export default function SettingsModal({ user, onClose }) {
                       className="block text-sm font-medium mb-2"
                       style={{ color: "var(--foreground)" }}
                     >
-                      Ubicación específica
+                      Cara
                     </label>
-                    <input
-                      type="text"
+                    <select
                       value={newProduct.cara}
                       onChange={(e) =>
                         setNewProduct({ ...newProduct, cara: e.target.value })
                       }
-                      placeholder="Ej: Izquierda, Centro, Arriba"
                       className="w-full px-3 py-3 rounded-md border focus:outline-none focus:ring-2 text-sm"
                       style={{
                         backgroundColor: "var(--surface)",
@@ -998,7 +996,11 @@ export default function SettingsModal({ user, onClose }) {
                         color: "var(--foreground)",
                         "--tw-ring-color": "var(--primary)",
                       }}
-                    />
+                    >
+                      <option value="">Seleccionar cara</option>
+                      <option value="1">Cara 1</option>
+                      <option value="2">Cara 2</option>
+                    </select>
                   </div>
                 </div>
 
@@ -1262,10 +1264,9 @@ export default function SettingsModal({ user, onClose }) {
                                   className="block text-sm font-medium mb-2"
                                   style={{ color: "var(--foreground)" }}
                                 >
-                                  Ubicación específica
+                                  Cara
                                 </label>
-                                <input
-                                  type="text"
+                                <select
                                   value={
                                     editingProductData.cara !== undefined
                                       ? editingProductData.cara
@@ -1277,14 +1278,17 @@ export default function SettingsModal({ user, onClose }) {
                                       cara: e.target.value,
                                     })
                                   }
-                                  placeholder="Ej: Izquierda, Centro, Arriba"
                                   className="w-full px-3 py-2 rounded border text-sm"
                                   style={{
                                     backgroundColor: "var(--surface)",
                                     borderColor: "var(--border)",
                                     color: "var(--foreground)",
                                   }}
-                                />
+                                >
+                                  <option value="">Seleccionar cara</option>
+                                  <option value="1">Cara 1</option>
+                                  <option value="2">Cara 2</option>
+                                </select>
                               </div>
                             </div>
 

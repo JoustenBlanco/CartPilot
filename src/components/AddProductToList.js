@@ -711,13 +711,11 @@ function CreateProductForm({ initialName, categories, supermarkets, onSubmit, on
 
         <div>
           <label className="block text-sm font-medium mb-1" style={{ color: "var(--foreground)" }}>
-            Cara/Lado
+            Cara
           </label>
-          <input
-            type="text"
+          <select
             value={formData.cara}
             onChange={(e) => setFormData({ ...formData, cara: e.target.value })}
-            placeholder="Izquierda, Derecha"
             className="w-full px-3 py-2 rounded-md border focus:outline-none focus:ring-2"
             style={{ 
               backgroundColor: "var(--background)",
@@ -725,7 +723,11 @@ function CreateProductForm({ initialName, categories, supermarkets, onSubmit, on
               color: "var(--foreground)",
               "--tw-ring-color": "var(--primary)"
             }}
-          />
+          >
+            <option value="">Seleccionar cara</option>
+            <option value="1">Cara 1</option>
+            <option value="2">Cara 2</option>
+          </select>
         </div>
       </div>
 
