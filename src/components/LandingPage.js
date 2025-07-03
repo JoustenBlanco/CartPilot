@@ -1,14 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
-import AuthForm from "./AuthForm";
 import GradientText from "@/TextAnimations/GradientText/GradientText";
 import Aurora from "@/Backgrounds/Aurora/Aurora";
 
 export default function LandingPage() {
-  const [showAuthForm, setShowAuthForm] = useState(false);
-  const [authMode, setAuthMode] = useState("login");
+  const router = useRouter();
 
   // Estilos centralizados
   const styles = {
@@ -89,20 +88,12 @@ export default function LandingPage() {
     Object.assign(e.target.style, defaultStyle);
   };
 
-  if (showAuthForm) {
-    return (
-      <AuthForm initialMode={authMode} onBack={() => setShowAuthForm(false)} />
-    );
-  }
-
   const handleLogin = () => {
-    setAuthMode("login");
-    setShowAuthForm(true);
+    router.push('/auth/login');
   };
 
   const handleSignup = () => {
-    setAuthMode("signup");
-    setShowAuthForm(true);
+    router.push('/auth/signup');
   };
 
   return (

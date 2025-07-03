@@ -34,6 +34,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [isAuthenticating, setIsAuthenticating] = useState(false)
 
   // Función para cargar el perfil del usuario
   const loadUserProfile = async (userId) => {
@@ -109,7 +110,14 @@ export const AuthProvider = ({ children }) => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state change:', event, session ? 'has session' : 'no session')
+        console.log('Auth state change:', event, session ? 'has session' : 'no session', 'isAuthenticating:', isAuthenticating)
+        
+        // Ignorar cambios de estado durante el proceso de autenticación manual
+        // para evitar redirecciones no deseadas cuando hay errores
+        if (isAuthenticating && event === 'SIGNED_OUT') {
+          console.log('Ignorando SIGNED_OUT durante autenticación manual')
+          return
+        }
         
         // Manejar eventos específicos de error de token
         if (event === 'TOKEN_REFRESHED' && !session) {
@@ -121,23 +129,33 @@ export const AuthProvider = ({ children }) => {
         }
 
         // Manejar evento de logout
-        if (event === 'SIGNED_OUT') {
+        if (event === 'SIGNED_OUT' && !isAuthenticating) {
           setUser(null)
           setProfile(null)
           setLoading(false)
           return
         }
 
-        // Para otros eventos, actualizar el estado
-        setUser(session?.user ?? null)
-        
-        if (session?.user) {
+        // Para eventos de login exitoso, siempre actualizar
+        if (event === 'SIGNED_IN' && session?.user) {
+          setUser(session.user)
           await loadUserProfile(session.user.id)
-        } else {
-          setProfile(null)
+          setLoading(false)
+          return
         }
-        
-        setLoading(false)
+
+        // Para otros eventos, actualizar el estado solo si no estamos autenticando
+        if (!isAuthenticating) {
+          setUser(session?.user ?? null)
+          
+          if (session?.user) {
+            await loadUserProfile(session.user.id)
+          } else {
+            setProfile(null)
+          }
+          
+          setLoading(false)
+        }
       }
     )
 
@@ -147,11 +165,12 @@ export const AuthProvider = ({ children }) => {
       }
       subscription?.unsubscribe()
     }
-  }, []) // loadUserProfile es estable, no necesita dependencias
+  }, [isAuthenticating]) // Agregar isAuthenticating como dependencia
 
   const signUp = async (email, password, fullName) => {
     try {
       setLoading(true)
+      setIsAuthenticating(true)
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -186,12 +205,14 @@ export const AuthProvider = ({ children }) => {
       return { data: null, error: error.message }
     } finally {
       setLoading(false)
+      setIsAuthenticating(false)
     }
   }
 
   const signIn = async (email, password) => {
     try {
       setLoading(true)
+      setIsAuthenticating(true)
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -202,12 +223,14 @@ export const AuthProvider = ({ children }) => {
       return { data: null, error: error.message }
     } finally {
       setLoading(false)
+      setIsAuthenticating(false)
     }
   }
 
   const signInWithGoogle = async () => {
     try {
       setLoading(true)
+      setIsAuthenticating(true)
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -220,6 +243,7 @@ export const AuthProvider = ({ children }) => {
       return { data: null, error: error.message }
     } finally {
       setLoading(false)
+      setIsAuthenticating(false)
     }
   }
 
@@ -280,15 +304,54 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  // Función para verificar si un email ya está registrado con un proveedor específico
+  const checkEmailProvider = async (email) => {
+    try {
+      // Intentar iniciar sesión con una contraseña obviamente incorrecta
+      // para forzar un error específico sin afectar la cuenta
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password: '!!invalid-password-check!!' // Contraseña que nunca puede ser válida
+      })
+      
+      if (error) {
+        const errorMessage = error.message.toLowerCase()
+        
+        // Si el error indica específicamente credenciales inválidas,
+        // significa que el usuario existe pero la contraseña es incorrecta
+        if (errorMessage.includes('invalid login credentials')) {
+          // Podría ser usuario con contraseña o con OAuth, necesitamos más información
+          return { existsWithOAuth: false, userExists: true, error: null }
+        }
+        
+        // Si el error indica que el usuario no fue encontrado
+        if (errorMessage.includes('user not found') || 
+            errorMessage.includes('email not confirmed')) {
+          return { existsWithOAuth: false, userExists: false, error: null }
+        }
+        
+        // Para otros errores, asumir que podría ser OAuth
+        return { existsWithOAuth: true, userExists: true, error: null }
+      }
+      
+      // Si no hay error (muy improbable con esa contraseña), el usuario no existe
+      return { existsWithOAuth: false, userExists: false, error: null }
+    } catch (error) {
+      return { existsWithOAuth: false, userExists: false, error: error.message }
+    }
+  }
+
   const value = {
     user,
     profile,
     loading,
+    isAuthenticating,
     signUp,
     signIn,
     signInWithGoogle,
     signOut,
     loadUserProfile,
+    checkEmailProvider,
     clearAllAuthData, // Función de emergencia para limpiar tokens
   }
 
