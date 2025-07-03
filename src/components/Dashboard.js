@@ -430,42 +430,43 @@ export default function Dashboard() {
 
   // Función mejorada para cerrar sesión
   const handleSignOut = async () => {
-    alerts.confirmLogout(async () => {
+    const confirmed = await alerts.confirmLogout();
+    if (!confirmed) return;
+    
+    try {
+      // Usar la función de signOut del hook
+      await signOut();
+      alerts.success('Sesión cerrada correctamente');
+    } catch (error) {
+      console.error('Error durante el cierre de sesión:', error);
+      
+      // Si hay error, forzar cierre de sesión local
       try {
-        // Usar la función de signOut del hook
-        await signOut();
-        alerts.success('Sesión cerrada correctamente');
-      } catch (error) {
-        console.error('Error durante el cierre de sesión:', error);
+        // Limpiar localStorage
+        const keys = Object.keys(localStorage);
+        keys.forEach(key => {
+          if (key.includes('supabase') || key.includes('sb-')) {
+            localStorage.removeItem(key);
+          }
+        });
         
-        // Si hay error, forzar cierre de sesión local
-        try {
-          // Limpiar localStorage
-          const keys = Object.keys(localStorage);
-          keys.forEach(key => {
-            if (key.includes('supabase') || key.includes('sb-')) {
-              localStorage.removeItem(key);
-            }
-          });
-          
-          // Limpiar sessionStorage
-          const sessionKeys = Object.keys(sessionStorage);
-          sessionKeys.forEach(key => {
-            if (key.includes('supabase') || key.includes('sb-')) {
-              sessionStorage.removeItem(key);
-            }
-          });
-          
-          // Redirigir manualmente
-          window.location.href = '/';
-          
-        } catch (cleanupError) {
-          console.error('Error en limpieza manual:', cleanupError);
-          // Como última opción, recargar la página
-          window.location.reload();
-        }
+        // Limpiar sessionStorage
+        const sessionKeys = Object.keys(sessionStorage);
+        sessionKeys.forEach(key => {
+          if (key.includes('supabase') || key.includes('sb-')) {
+            sessionStorage.removeItem(key);
+          }
+        });
+        
+        // Redirigir manualmente
+        window.location.href = '/';
+        
+      } catch (cleanupError) {
+        console.error('Error en limpieza manual:', cleanupError);
+        // Como última opción, recargar la página
+        window.location.reload();
       }
-    });
+    }
   };
 
   // Abrir lista específica
