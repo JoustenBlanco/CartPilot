@@ -65,21 +65,27 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
+    console.log("🚀 useEffect INICIADO - isAuthenticating:", isAuthenticating);
     let timeoutId;
 
     // Get initial session
     const getSession = async () => {
+      console.log("🔄 getSession INICIADO");
       try {
+        console.log("🔄 Setting loading to true");
         setLoading(true);
 
+        console.log("🔄 Calling supabase.auth.getSession()...");
         // Obtener sesión directamente sin wrapper para evitar problemas
         const {
           data: { session },
           error,
         } = await supabase.auth.getSession();
 
+        console.log("📄 getSession response:", { session: !!session, error });
+
         if (error) {
-          console.log("Pasando por el error de sesión");
+          console.log("❌ Error en getSession:", error.message);
           console.error("Error getting session:", error.message);
 
           // Manejar el error pero no bloquear
@@ -88,25 +94,25 @@ export const AuthProvider = ({ children }) => {
           setProfile(null);
           setLoading(false);
           clearTimeout(timeoutId);
-          console.log("Pasando por el error de sesión");
           return;
         }
 
         if (session?.user) {
-          console.log("Pasando por el if de sesión");
-          console.log("Session found:", session.user);
+          console.log("✅ Session found en getSession:", session.user.id);
           setUser(session.user);
           // Esperar a que termine de cargar el perfil antes de quitar el loading
           await loadUserProfile(session.user.id);
         } else {
+          console.log("ℹ️ No session found en getSession");
           setUser(null);
           setProfile(null);
         }
 
         clearTimeout(timeoutId);
+        console.log("✅ getSession terminando - setting loading to false");
         setLoading(false);
       } catch (error) {
-        console.error("Error in getSession:", error.message);
+        console.error("💥 Exception en getSession:", error.message);
         setUser(null);
         setProfile(null);
         clearTimeout(timeoutId);
@@ -114,6 +120,7 @@ export const AuthProvider = ({ children }) => {
       }
     };
 
+    console.log("🔄 Llamando a getSession()...");
     getSession();
 
     // Listen for auth changes
@@ -121,7 +128,7 @@ export const AuthProvider = ({ children }) => {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log(
-        "Auth state change:",
+        "🔔 Auth state change:",
         event,
         session ? "has session" : "no session",
         "isAuthenticating:",
@@ -131,13 +138,13 @@ export const AuthProvider = ({ children }) => {
       // Ignorar cambios de estado durante el proceso de autenticación manual
       // para evitar redirecciones no deseadas cuando hay errores
       if (isAuthenticating && event === "SIGNED_OUT") {
-        console.log("Ignorando SIGNED_OUT durante autenticación manual");
+        console.log("⏭️ Ignorando SIGNED_OUT durante autenticación manual");
         return;
       }
 
       // Manejar eventos específicos de error de token
       if (event === "TOKEN_REFRESHED" && !session) {
-        console.warn("Token refresh failed, clearing session");
+        console.warn("⚠️ Token refresh failed, clearing session");
         setUser(null);
         setProfile(null);
         setLoading(false);
@@ -146,6 +153,7 @@ export const AuthProvider = ({ children }) => {
 
       // Manejar evento de logout
       if (event === "SIGNED_OUT" && !isAuthenticating) {
+        console.log("📤 Procesando SIGNED_OUT");
         setUser(null);
         setProfile(null);
         setLoading(false);
@@ -154,33 +162,52 @@ export const AuthProvider = ({ children }) => {
 
       // Para eventos de login exitoso, siempre actualizar
       if (event === "SIGNED_IN" && session?.user) {
+        console.log("✅ Procesando SIGNED_IN event");
         setUser(session.user);
-        await loadUserProfile(session.user.id);
-        setLoading(false);
+
+        try {
+          console.log("🔄 Cargando perfil en SIGNED_IN...");
+          await loadUserProfile(session.user.id);
+          console.log("✅ Perfil cargado en SIGNED_IN");
+        } catch (error) {
+          console.error("❌ Error cargando perfil en SIGNED_IN:", error);
+          setProfile(null);
+        } finally {
+          console.log("🏁 Terminando SIGNED_IN - setting loading to false");
+          setLoading(false);
+        }
         return;
       }
 
       // Para otros eventos, actualizar el estado solo si no estamos autenticando
       if (!isAuthenticating) {
+        console.log("🔄 Procesando otros eventos - no authenticating");
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          await loadUserProfile(session.user.id);
+          try {
+            await loadUserProfile(session.user.id);
+          } catch (error) {
+            console.error("❌ Error loading profile en otros eventos:", error);
+            setProfile(null);
+          } finally {
+            setLoading(false);
+          }
         } else {
           setProfile(null);
+          setLoading(false);
         }
-
-        setLoading(false);
       }
     });
 
     return () => {
+      console.log("🧹 useEffect cleanup");
       if (timeoutId) {
         clearTimeout(timeoutId);
       }
       subscription?.unsubscribe();
     };
-  }, [isAuthenticating]); // Agregar isAuthenticating como dependencia
+  }, [isAuthenticating]);
 
   const signUp = async (email, password, fullName) => {
     try {
