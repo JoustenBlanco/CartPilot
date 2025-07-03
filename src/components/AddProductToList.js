@@ -397,6 +397,13 @@ function CreateProductForm({ initialName, categories, supermarkets, onSubmit, on
   const [newSupermarketName, setNewSupermarketName] = useState("");
   const [creating, setCreating] = useState(false);
 
+  // Limpiar campo "cara" cuando se borra el estante
+  useEffect(() => {
+    if (!formData.estante || !formData.estante.trim()) {
+      setFormData(prev => ({ ...prev, cara: "" }));
+    }
+  }, [formData.estante]);
+
   // Crear nueva categoría
   const createCategory = async () => {
     if (!newCategoryName.trim() || !user) return;
@@ -716,7 +723,8 @@ function CreateProductForm({ initialName, categories, supermarkets, onSubmit, on
           <select
             value={formData.cara}
             onChange={(e) => setFormData({ ...formData, cara: e.target.value })}
-            className="w-full px-3 py-2 rounded-md border focus:outline-none focus:ring-2"
+            disabled={!formData.estante || !formData.estante.trim()}
+            className="w-full px-3 py-2 rounded-md border focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ 
               backgroundColor: "var(--background)",
               borderColor: "var(--border)",
@@ -724,9 +732,18 @@ function CreateProductForm({ initialName, categories, supermarkets, onSubmit, on
               "--tw-ring-color": "var(--primary)"
             }}
           >
-            <option value="">Seleccionar cara</option>
-            <option value="1">Cara 1</option>
-            <option value="2">Cara 2</option>
+            <option value="">
+              {!formData.estante || !formData.estante.trim() 
+                ? "Primero ingrese un estante" 
+                : "Seleccionar cara"
+              }
+            </option>
+            {formData.estante && formData.estante.trim() && (
+              <>
+                <option value="1">Cara 1</option>
+                <option value="2">Cara 2</option>
+              </>
+            )}
           </select>
         </div>
       </div>

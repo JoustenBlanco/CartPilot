@@ -34,6 +34,24 @@ export default function SettingsModal({ user, onClose }) {
   const [editingProduct, setEditingProduct] = useState(null);
   const [editingProductData, setEditingProductData] = useState({});
 
+  // Limpiar campo "cara" cuando se borra el estante en nuevo producto
+  useEffect(() => {
+    if (!newProduct.estante || !newProduct.estante.trim()) {
+      setNewProduct(prev => ({ ...prev, cara: "" }));
+    }
+  }, [newProduct.estante]);
+
+  // Limpiar campo "cara" cuando se borra el estante en producto editado
+  useEffect(() => {
+    const currentEstante = editingProductData.estante !== undefined 
+      ? editingProductData.estante 
+      : null;
+    
+    if (currentEstante !== null && (!currentEstante || !currentEstante.trim())) {
+      setEditingProductData(prev => ({ ...prev, cara: "" }));
+    }
+  }, [editingProductData.estante]);
+
   // Cargar categorías
   const loadCategories = useCallback(async () => {
     if (!user) return;
@@ -989,7 +1007,8 @@ export default function SettingsModal({ user, onClose }) {
                       onChange={(e) =>
                         setNewProduct({ ...newProduct, cara: e.target.value })
                       }
-                      className="w-full px-3 py-3 rounded-md border focus:outline-none focus:ring-2 text-sm"
+                      disabled={!newProduct.estante || !newProduct.estante.trim()}
+                      className="w-full px-3 py-3 rounded-md border focus:outline-none focus:ring-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                       style={{
                         backgroundColor: "var(--surface)",
                         borderColor: "var(--border)",
@@ -997,36 +1016,20 @@ export default function SettingsModal({ user, onClose }) {
                         "--tw-ring-color": "var(--primary)",
                       }}
                     >
-                      <option value="">Seleccionar cara</option>
-                      <option value="1">Cara 1</option>
-                      <option value="2">Cara 2</option>
+                      <option value="">
+                        {!newProduct.estante || !newProduct.estante.trim() 
+                          ? "Primero seleccione un estante" 
+                          : "Seleccionar cara"
+                        }
+                      </option>
+                      {newProduct.estante && newProduct.estante.trim() && (
+                        <>
+                          <option value="1">Cara 1</option>
+                          <option value="2">Cara 2</option>
+                        </>
+                      )}
                     </select>
                   </div>
-                </div>
-
-                {/* URL de imagen */}
-                <div>
-                  <label
-                    className="block text-sm font-medium mb-2"
-                    style={{ color: "var(--foreground)" }}
-                  >
-                    URL de la imagen (opcional)
-                  </label>
-                  <input
-                    type="url"
-                    value={newProduct.foto_url}
-                    onChange={(e) =>
-                      setNewProduct({ ...newProduct, foto_url: e.target.value })
-                    }
-                    placeholder="https://ejemplo.com/imagen.jpg"
-                    className="w-full px-3 py-3 rounded-md border focus:outline-none focus:ring-2 text-sm"
-                    style={{
-                      backgroundColor: "var(--surface)",
-                      borderColor: "var(--border)",
-                      color: "var(--foreground)",
-                      "--tw-ring-color": "var(--primary)",
-                    }}
-                  />
                 </div>
               </div>
 
@@ -1278,16 +1281,34 @@ export default function SettingsModal({ user, onClose }) {
                                       cara: e.target.value,
                                     })
                                   }
-                                  className="w-full px-3 py-2 rounded border text-sm"
+                                  disabled={
+                                    !(editingProductData.estante !== undefined 
+                                      ? editingProductData.estante?.trim() 
+                                      : product.estante?.trim())
+                                  }
+                                  className="w-full px-3 py-2 rounded border text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                   style={{
                                     backgroundColor: "var(--surface)",
                                     borderColor: "var(--border)",
                                     color: "var(--foreground)",
                                   }}
                                 >
-                                  <option value="">Seleccionar cara</option>
-                                  <option value="1">Cara 1</option>
-                                  <option value="2">Cara 2</option>
+                                  <option value="">
+                                    {!(editingProductData.estante !== undefined 
+                                      ? editingProductData.estante?.trim() 
+                                      : product.estante?.trim())
+                                      ? "Primero seleccione un estante" 
+                                      : "Seleccionar cara"
+                                    }
+                                  </option>
+                                  {(editingProductData.estante !== undefined 
+                                    ? editingProductData.estante?.trim() 
+                                    : product.estante?.trim()) && (
+                                    <>
+                                      <option value="1">Cara 1</option>
+                                      <option value="2">Cara 2</option>
+                                    </>
+                                  )}
                                 </select>
                               </div>
                             </div>
