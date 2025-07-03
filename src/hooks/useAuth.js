@@ -40,29 +40,51 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
-  // Función para cargar el perfil del usuario
-  const loadUserProfile = async (userId) => {
-    if (!userId) {
-      setProfile(null);
-      return;
-    }
+// Función para cargar el perfil del usuario
+const loadUserProfile = async (userId) => {
+  console.log("🔄 loadUserProfile iniciado para:", userId);
+  
+  if (!userId) {
+    console.log("❌ No userId provided");
+    setProfile(null);
+    return;
+  }
 
-    try {
-      const { data, error } = await getUserProfile(userId);
-      if (!error && data) {
-        console.log("PUTO EL QUE LO LEAAAA");
-        setProfile(data);
-      } else {
-        console.log("PUTO EL QUE LO LEA");
-        console.warn("Error loading user profile:", error);
-        setProfile(null);
-      }
-    } catch (error) {
-      console.error("Exception loading user profile:", error);
-      console.log("PUTO EL QUE LO LEAUUUU");
+  try {
+    console.log("🔄 Llamando a getUserProfile...");
+    
+    // Crear una promesa con timeout
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Timeout loading profile')), 10000); // 10 segundos
+    });
+
+    const profilePromise = getUserProfile(userId);
+
+    // Usar Promise.race para que falle si tarda más de 10 segundos
+    const { data, error } = await Promise.race([profilePromise, timeoutPromise]);
+    
+    console.log("📄 getUserProfile response:", { hasData: !!data, error });
+    
+    if (!error && data) {
+      console.log("✅ Perfil cargado exitosamente:", data);
+      setProfile(data);
+    } else {
+      console.warn("⚠️ Error loading profile:", error);
       setProfile(null);
     }
-  };
+  } catch (error) {
+    console.error("💥 Exception loading user profile:", error);
+    setProfile(null);
+    
+    // Si es timeout, establecer un perfil básico para no bloquear la app
+    if (error.message.includes('Timeout')) {
+      console.log("⏰ Timeout detectado, continuando sin perfil");
+      setProfile(null);
+    }
+  }
+  
+  console.log("🏁 loadUserProfile terminado");
+};
 
   useEffect(() => {
     console.log("🚀 useEffect INICIADO - isAuthenticating:", isAuthenticating);
