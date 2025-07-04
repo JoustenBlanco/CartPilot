@@ -8,6 +8,16 @@ import { sendNewListEmail, getListProductsForEmail } from "@/lib/email-helpers";
 import AddProductToList from "./AddProductToList";
 import Avatar from "./Avatar";
 import SettingsModal from "./SettingsModal";
+import { 
+  determineUnit, 
+  formatQuantity, 
+  convertToStorageValue, 
+  validateQuantity, 
+  getMinValue, 
+  getStep,
+  addQuantity,
+  subtractQuantity
+} from "@/lib/quantity-helpers";
 import EmergencySignOut from "./EmergencySignOut";
 import Navigation from "./Navigation";
 
@@ -40,6 +50,7 @@ export default function Dashboard() {
   // Estados para edición de cantidad de productos
   const [editingQuantity, setEditingQuantity] = useState(null); // ID del producto que se está editando
   const [tempQuantity, setTempQuantity] = useState(''); // Valor temporal durante la edición
+  const [tempUnit, setTempUnit] = useState('unidades'); // Unidad temporal durante la edición
 
   // Estados para ordenamiento de productos
   const [sortOrder, setSortOrder] = useState('asc'); // 'asc', 'desc'
@@ -353,13 +364,18 @@ export default function Dashboard() {
   };
 
   // Actualizar cantidad de producto
-  const updateProductQuantity = async (listProductId, newQuantity) => {
-    if (newQuantity === '' || isNaN(newQuantity)) return; // Ignorar si la cantidad es vacía o no es un número
+  const updateProductQuantity = async (listProductId, newQuantity, unit = 'unidades') => {
+    if (!validateQuantity(newQuantity, unit)) {
+      alerts.warning(`La cantidad debe estar entre ${getMinValue(unit)} y ${unit === 'kg' ? '999.9' : '9999'}`);
+      return;
+    }
     
     try {
+      const storageQuantity = convertToStorageValue(newQuantity, unit);
+      
       const { error } = await supabase
         .from('lista_productos')
-        .update({ cantidad: parseInt(newQuantity) })
+        .update({ cantidad: storageQuantity })
         .eq('id', listProductId);
       
       if (error) throw error;
@@ -378,25 +394,33 @@ export default function Dashboard() {
   // Funciones para editar cantidad inline
   const startEditingQuantity = (listProductId, currentQuantity) => {
     setEditingQuantity(listProductId);
-    setTempQuantity(currentQuantity.toString());
+    const unit = determineUnit(currentQuantity);
+    // Para kg, asegurar que solo tenga 1 decimal
+    const displayQuantity = unit === 'kg' ? 
+      (Math.round(currentQuantity * 10) / 10).toString() : 
+      currentQuantity.toString();
+    setTempQuantity(displayQuantity);
+    setTempUnit(unit);
   };
 
   const cancelEditingQuantity = () => {
     setEditingQuantity(null);
     setTempQuantity('');
+    setTempUnit('unidades');
   };
 
   const saveQuantity = async (listProductId) => {
     try {
-      const quantity = parseInt(tempQuantity);
-      if (isNaN(quantity) || quantity < 1) {
-        alerts.warning('La cantidad debe ser un número mayor a 0');
+      const quantity = parseFloat(tempQuantity);
+      if (!validateQuantity(quantity, tempUnit)) {
+        alerts.warning(`La cantidad debe estar entre ${getMinValue(tempUnit)} y ${tempUnit === 'kg' ? '999.9' : '9999'}`);
         return;
       }
 
-      await updateProductQuantity(listProductId, quantity);
+      await updateProductQuantity(listProductId, quantity, tempUnit);
       setEditingQuantity(null);
       setTempQuantity('');
+      setTempUnit('unidades');
       alerts.success('Cantidad actualizada correctamente');
     } catch (error) {
       console.error('Error al guardar cantidad:', error);
@@ -1206,14 +1230,6 @@ export default function Dashboard() {
                     className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-opacity-50 rounded-lg p-4"
                     style={{ backgroundColor: "var(--surface)" }}
                   >
-                    <div className="flex items-center space-x-2 mb-3 sm:mb-0">
-                      <span 
-                        className="text-sm font-medium"
-                        style={{ color: "var(--foreground)" }}
-                      >
-                        Ordenamiento por: Supermercado → Estante → Cara
-                      </span>
-                    </div>
                     
                     <div className="flex items-center space-x-2">
                       <span 
@@ -1335,46 +1351,111 @@ export default function Dashboard() {
                                         <span className="mr-1">📦</span>
                                         <span className="font-medium mr-1">Cantidad:</span>
                                         {editingQuantity === item.id ? (
-                                          <div className="flex items-center space-x-2" onClick={(e) => e.stopPropagation()}>
-                                            <input
-                                              type="number"
-                                              min="1"
-                                              value={tempQuantity}
-                                              onChange={(e) => setTempQuantity(e.target.value)}
-                                              className="w-16 px-2 py-1 text-sm border rounded focus:outline-none focus:ring-2"
-                                              style={{
-                                                backgroundColor: "var(--background)",
-                                                borderColor: "var(--border)",
-                                                color: "var(--foreground)",
-                                                "--tw-ring-color": "var(--primary)"
-                                              }}
-                                              onKeyPress={(e) => {
-                                                if (e.key === 'Enter') {
-                                                  saveQuantity(item.id);
-                                                } else if (e.key === 'Escape') {
-                                                  cancelEditingQuantity();
-                                                }
-                                              }}
-                                              autoFocus
-                                            />
-                                            <button
-                                              onClick={() => saveQuantity(item.id)}
-                                              className="p-1 text-green-600 hover:bg-green-100 rounded transition-colors"
-                                              title="Guardar"
-                                            >
-                                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                                              </svg>
-                                            </button>
-                                            <button
-                                              onClick={cancelEditingQuantity}
-                                              className="p-1 text-red-600 hover:bg-red-100 rounded transition-colors"
-                                              title="Cancelar"
-                                            >
-                                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
-                                              </svg>
-                                            </button>
+                                          <div className="flex flex-col space-y-2" onClick={(e) => e.stopPropagation()}>
+                                            {/* Selector de unidades */}
+                                            <div className="flex space-x-1 mb-1">
+                                              <button
+                                                onClick={() => {
+                                                  setTempUnit('unidades');
+                                                  setTempQuantity(Math.max(1, Math.round(parseFloat(tempQuantity) || 1)).toString());
+                                                }}
+                                                className={`px-2 py-1 text-xs rounded transition-colors ${
+                                                  tempUnit === 'unidades' 
+                                                    ? 'text-white' 
+                                                    : 'border hover:bg-gray-50'
+                                                }`}
+                                                style={{ 
+                                                  backgroundColor: tempUnit === 'unidades' ? "var(--primary)" : "transparent",
+                                                  borderColor: tempUnit === 'unidades' ? "var(--primary)" : "var(--border)",
+                                                  color: tempUnit === 'unidades' ? 'white' : "var(--text-secondary)"
+                                                }}
+                                              >
+                                                📦 Unidades
+                                              </button>
+                                              <button
+                                                onClick={() => {
+                                                  setTempUnit('kg');
+                                                  const currentValue = parseFloat(tempQuantity) || 1;
+                                                  const newValue = Math.max(0.1, currentValue);
+                                                  setTempQuantity((Math.round(newValue * 10) / 10).toString());
+                                                }}
+                                                className={`px-2 py-1 text-xs rounded transition-colors ${
+                                                  tempUnit === 'kg' 
+                                                    ? 'text-white' 
+                                                    : 'border hover:bg-gray-50'
+                                                }`}
+                                                style={{ 
+                                                  backgroundColor: tempUnit === 'kg' ? "var(--primary)" : "transparent",
+                                                  borderColor: tempUnit === 'kg' ? "var(--primary)" : "var(--border)",
+                                                  color: tempUnit === 'kg' ? 'white' : "var(--text-secondary)"
+                                                }}
+                                              >
+                                                ⚖️ Kg
+                                              </button>
+                                            </div>
+                                            <div className="text-xs mb-2" style={{ color: "var(--text-muted)" }}>
+                                              {tempUnit === 'kg' ? 'Permite decimales (ej: 1.5)' : 'Solo números enteros (ej: 3)'}
+                                            </div>
+                                            
+                                            {/* Input de cantidad y botones de acción */}
+                                            <div className="flex items-center space-x-2">
+                                              <input
+                                                type="number"
+                                                min={getMinValue(tempUnit)}
+                                                step={getStep(tempUnit)}
+                                                value={tempQuantity}
+                                                onChange={(e) => {
+                                                  const value = e.target.value;
+                                                  if (tempUnit === 'kg' && value.includes('.')) {
+                                                    // Para kg, limitar a 1 decimal
+                                                    const parts = value.split('.');
+                                                    if (parts[1] && parts[1].length > 1) {
+                                                      setTempQuantity(parts[0] + '.' + parts[1].substring(0, 1));
+                                                    } else {
+                                                      setTempQuantity(value);
+                                                    }
+                                                  } else {
+                                                    setTempQuantity(value);
+                                                  }
+                                                }}
+                                                className="w-16 px-2 py-1 text-sm border rounded focus:outline-none focus:ring-2"
+                                                style={{
+                                                  backgroundColor: "var(--background)",
+                                                  borderColor: "var(--border)",
+                                                  color: "var(--foreground)",
+                                                  "--tw-ring-color": "var(--primary)"
+                                                }}
+                                                onKeyPress={(e) => {
+                                                  if (e.key === 'Enter') {
+                                                    saveQuantity(item.id);
+                                                  } else if (e.key === 'Escape') {
+                                                    cancelEditingQuantity();
+                                                  }
+                                                }}
+                                                autoFocus
+                                              />
+                                              <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
+                                                {tempUnit === 'kg' ? 'kg' : 'unidades'}
+                                              </span>
+                                              <button
+                                                onClick={() => saveQuantity(item.id)}
+                                                className="p-1 text-green-600 hover:bg-green-100 rounded transition-colors"
+                                                title="Guardar"
+                                              >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                                                </svg>
+                                              </button>
+                                              <button
+                                                onClick={cancelEditingQuantity}
+                                                className="p-1 text-red-600 hover:bg-red-100 rounded transition-colors"
+                                                title="Cancelar"
+                                              >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                </svg>
+                                              </button>
+                                            </div>
                                           </div>
                                         ) : (
                                           <button
@@ -1385,7 +1466,7 @@ export default function Dashboard() {
                                             className="flex items-center space-x-1 px-2 py-1 rounded hover:bg-gray-100 transition-colors"
                                             title="Editar cantidad"
                                           >
-                                            <span>{item.cantidad}</span>
+                                            <span>{formatQuantity(item.cantidad)}</span>
                                             <svg className="w-3 h-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                             </svg>

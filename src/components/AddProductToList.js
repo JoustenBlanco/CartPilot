@@ -3,6 +3,15 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAlertHelpers } from "@/hooks/useAlertHelpers";
+import { 
+  convertToStorageValue, 
+  validateQuantity, 
+  getMinValue, 
+  getStep, 
+  formatQuantity,
+  addQuantity,
+  subtractQuantity
+} from "@/lib/quantity-helpers";
 
 export default function AddProductToList({ listId, onProductAdded, onClose, user }) {
   const alerts = useAlertHelpers();
@@ -16,6 +25,7 @@ export default function AddProductToList({ listId, onProductAdded, onClose, user
   const [supermarkets, setSupermarkets] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [quantity, setQuantity] = useState(1);
+  const [unit, setUnit] = useState('unidades'); // 'unidades' o 'kg'
 
   const loadData = useCallback(async () => {
     if (!user) return;
@@ -61,39 +71,51 @@ export default function AddProductToList({ listId, onProductAdded, onClose, user
   const selectProduct = (product) => {
     setSelectedProduct(product);
     setQuantity(1);
+    setUnit('unidades'); // Reset unit to default
   };
 
   // Cancelar selección de producto
   const cancelProductSelection = () => {
     setSelectedProduct(null);
     setQuantity(1);
+    setUnit('unidades'); // Reset unit to default
   };
 
   // Confirmar agregar producto con cantidad
   const confirmAddProduct = async () => {
     if (selectedProduct && quantity > 0) {
-      await addProductToList(selectedProduct.id, quantity);
+      await addProductToList(selectedProduct.id, quantity, unit);
       setSelectedProduct(null);
       setQuantity(1);
+      setUnit('unidades'); // Reset unit to default
     }
   };
 
   // Agregar producto existente a la lista
-  const addProductToList = async (productId, quantity = 1) => {
+  const addProductToList = async (productId, quantity = 1, unit = 'unidades') => {
     setLoading(true);
     try {
+      // Validar cantidad
+      if (!validateQuantity(quantity, unit)) {
+        alerts.warning(`La cantidad debe estar entre ${getMinValue(unit)} y ${unit === 'kg' ? '999.9' : '9999'}`);
+        return;
+      }
+
+      // Convertir cantidad para almacenar
+      const storageQuantity = convertToStorageValue(quantity, unit);
+      
       const { error } = await supabase
         .from('lista_productos')
         .insert([{
           lista_id: listId,
           producto_id: productId,
-          cantidad: quantity,
+          cantidad: storageQuantity,
           comprado: false
         }]);
 
       if (error) throw error;
       
-      alerts.success(`Producto agregado correctamente a la lista`);
+      alerts.success(`Producto agregado correctamente a la lista (${formatQuantity(storageQuantity)})`);
       onProductAdded && onProductAdded();
       setSearchTerm("");
       setFilteredProducts([]);
@@ -125,6 +147,7 @@ export default function AddProductToList({ listId, onProductAdded, onClose, user
       // Mostrar modal de cantidad para el nuevo producto
       setSelectedProduct(newProduct);
       setQuantity(1);
+      setUnit('unidades'); // Reset unit to default
       
       setShowCreateForm(false);
       setNewProductName("");
@@ -307,17 +330,60 @@ export default function AddProductToList({ listId, onProductAdded, onClose, user
                   className="block text-sm font-medium mb-2"
                   style={{ color: "var(--foreground)" }}
                 >
-                  Cantidad
+                  ¿Qué cantidad necesitas?
                 </label>
+                
+                {/* Selector de unidades */}
+                <div className="flex justify-center space-x-2 mb-4">
+                  <button
+                    onClick={() => {
+                      setUnit('unidades');
+                      setQuantity(Math.max(1, Math.round(quantity)));
+                    }}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                      unit === 'unidades' 
+                        ? 'text-white shadow-md' 
+                        : 'border hover:bg-gray-50'
+                    }`}
+                    style={{ 
+                      backgroundColor: unit === 'unidades' ? "var(--primary)" : "transparent",
+                      borderColor: unit === 'unidades' ? "var(--primary)" : "var(--border)",
+                      color: unit === 'unidades' ? 'white' : "var(--text-secondary)"
+                    }}
+                  >
+                    <span className="mr-2">📦</span>
+                    Por unidades
+                  </button>
+                  <button
+                    onClick={() => {
+                      setUnit('kg');
+                      if (quantity < 0.1) setQuantity(0.1);
+                    }}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                      unit === 'kg' 
+                        ? 'text-white shadow-md' 
+                        : 'border hover:bg-gray-50'
+                    }`}
+                    style={{ 
+                      backgroundColor: unit === 'kg' ? "var(--primary)" : "transparent",
+                      borderColor: unit === 'kg' ? "var(--primary)" : "var(--border)",
+                      color: unit === 'kg' ? 'white' : "var(--text-secondary)"
+                    }}
+                  >
+                    <span className="mr-2">⚖️</span>
+                    Por kilogramos
+                  </button>
+                </div>
+                
                 <div className="flex items-center justify-center space-x-3">
                   <button
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    onClick={() => setQuantity(subtractQuantity(quantity, unit))}
                     className="w-10 h-10 rounded-full border flex items-center justify-center transition-colors"
                     style={{ 
                       borderColor: "var(--border)",
                       color: "var(--text-secondary)"
                     }}
-                    disabled={quantity <= 1}
+                    disabled={quantity <= getMinValue(unit)}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 12H4"></path>
@@ -326,9 +392,14 @@ export default function AddProductToList({ listId, onProductAdded, onClose, user
                   
                   <input
                     type="number"
-                    min="1"
+                    min={getMinValue(unit)}
+                    step={getStep(unit)}
                     value={quantity}
-                    onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                    onChange={(e) => {
+                      const value = parseFloat(e.target.value) || getMinValue(unit);
+                      const newValue = unit === 'kg' ? Math.round(value * 10) / 10 : Math.max(getMinValue(unit), value);
+                      setQuantity(newValue);
+                    }}
                     className="w-20 text-center text-xl font-semibold py-2 rounded-md border focus:outline-none focus:ring-2"
                     style={{ 
                       backgroundColor: "var(--background)",
@@ -339,7 +410,7 @@ export default function AddProductToList({ listId, onProductAdded, onClose, user
                   />
                   
                   <button
-                    onClick={() => setQuantity(quantity + 1)}
+                    onClick={() => setQuantity(addQuantity(quantity, unit))}
                     className="w-10 h-10 rounded-full border flex items-center justify-center transition-colors"
                     style={{ 
                       borderColor: "var(--border)",
@@ -350,6 +421,19 @@ export default function AddProductToList({ listId, onProductAdded, onClose, user
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path>
                     </svg>
                   </button>
+                </div>
+                
+                {/* Mostrar unidad actual */}
+                <div className="text-center mt-3">
+                  <span className="text-lg font-semibold" style={{ color: "var(--primary)" }}>
+                    {unit === 'kg' ? `${quantity} kg` : `${quantity} ${quantity === 1 ? 'unidad' : 'unidades'}`}
+                  </span>
+                  <p className="text-xs mt-1" style={{ color: "var(--text-secondary)" }}>
+                    {unit === 'kg' 
+                      ? 'Ideal para productos que se venden por peso' 
+                      : 'Ideal para productos que se cuentan por piezas'
+                    }
+                  </p>
                 </div>
               </div>
               
