@@ -19,6 +19,7 @@ export default function AuthForm({ initialMode = 'login', onBack = null }) {
   const [failedAttempts, setFailedAttempts] = useState(0)
   const [isBlocked, setIsBlocked] = useState(false)
   const [blockTimeRemaining, setBlockTimeRemaining] = useState(0)
+  const [showPassword, setShowPassword] = useState(false)
   
   const { signIn, signUp, signInWithGoogle, loading } = useAuth()
 
@@ -304,6 +305,7 @@ export default function AuthForm({ initialMode = 'login', onBack = null }) {
     setFailedAttempts(0)
     setIsBlocked(false)
     setBlockTimeRemaining(0)
+    setShowPassword(false)
   }
 
   const handleGoogleSignIn = async () => {
@@ -430,23 +432,54 @@ export default function AuthForm({ initialMode = 'login', onBack = null }) {
               <label htmlFor="password" className="block text-sm font-medium" style={{ color: 'var(--foreground)' }}>
                 Contraseña
               </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete={isSignUp ? "new-password" : "current-password"}
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:z-10 sm:text-sm"
-                style={{ 
-                  borderColor: 'var(--border)',
-                  backgroundColor: 'var(--surface)',
-                  color: 'var(--foreground)',
-                  '--tw-ring-color': 'var(--primary)'
-                }}
-                placeholder="Mínimo 6 caracteres"
-              />
+              <div className="relative">
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete={isSignUp ? "new-password" : "current-password"}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="mt-1 appearance-none relative block w-full px-3 py-2 pr-10 border rounded-md focus:outline-none focus:ring-2 focus:z-10 sm:text-sm"
+                  style={{ 
+                    borderColor: 'var(--border)',
+                    backgroundColor: 'var(--surface)',
+                    color: 'var(--foreground)',
+                    '--tw-ring-color': 'var(--primary)'
+                  }}
+                  placeholder="Mínimo 6 caracteres"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center transition-colors hover:bg-opacity-20 rounded-r-md"
+                  style={{ 
+                    color: 'var(--text-muted)',
+                    backgroundColor: 'transparent'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.color = 'var(--primary)'
+                    e.target.style.backgroundColor = 'var(--surface-hover)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.color = 'var(--text-muted)'
+                    e.target.style.backgroundColor = 'transparent'
+                  }}
+                  title={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                >
+                  {showPassword ? (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"></path>
+                    </svg>
+                  ) : (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                    </svg>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
 
