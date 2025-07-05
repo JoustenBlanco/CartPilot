@@ -34,11 +34,14 @@ export default function SettingsModal({ user, onClose }) {
   const [editingProduct, setEditingProduct] = useState(null);
   const [editingProductData, setEditingProductData] = useState({});
   const [searchSupermarket, setSearchSupermarket] = useState("");
+  const [searchCategory, setSearchCategory] = useState("");
   const searchInputRef = useRef(null);
+  const searchCategoryInputRef = useRef(null);
 
   // Limpiar búsqueda cuando se cambia de pestaña
   useEffect(() => {
     setSearchSupermarket("");
+    setSearchCategory("");
   }, [activeTab]);
 
   // Limpiar campo "cara" cuando se borra el estante en nuevo producto
@@ -281,22 +284,32 @@ export default function SettingsModal({ user, onClose }) {
     }
   };
 
-  // Atajo de teclado para enfocar la búsqueda (Ctrl/Cmd + F cuando está en la pestaña de supermercados)
+  // Atajo de teclado para enfocar la búsqueda (Ctrl/Cmd + F cuando está en la pestaña correspondiente)
   useEffect(() => {
     const handleKeyDown = (event) => {
-      if ((event.ctrlKey || event.metaKey) && event.key === 'f' && activeTab === 'supermarkets') {
-        event.preventDefault();
-        searchInputRef.current?.focus();
+      if ((event.ctrlKey || event.metaKey) && event.key === 'f') {
+        if (activeTab === 'supermarkets') {
+          event.preventDefault();
+          searchInputRef.current?.focus();
+        } else if (activeTab === 'categories') {
+          event.preventDefault();
+          searchCategoryInputRef.current?.focus();
+        }
       }
-      if (event.key === 'Escape' && activeTab === 'supermarkets' && searchSupermarket) {
-        setSearchSupermarket("");
-        searchInputRef.current?.blur();
+      if (event.key === 'Escape') {
+        if (activeTab === 'supermarkets' && searchSupermarket) {
+          setSearchSupermarket("");
+          searchInputRef.current?.blur();
+        } else if (activeTab === 'categories' && searchCategory) {
+          setSearchCategory("");
+          searchCategoryInputRef.current?.blur();
+        }
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [activeTab, searchSupermarket]);
+  }, [activeTab, searchSupermarket, searchCategory]);
 
   // Función para resaltar el texto de búsqueda
   const highlightSearchText = (text, searchTerm) => {
@@ -325,6 +338,11 @@ export default function SettingsModal({ user, onClose }) {
   // Filtrar supermercados basado en la búsqueda
   const filteredSupermarkets = supermarkets.filter(supermarket =>
     supermarket.nombre.toLowerCase().includes(searchSupermarket.toLowerCase())
+  );
+
+  // Filtrar categorías basado en la búsqueda
+  const filteredCategories = categories.filter(category =>
+    category.nombre.toLowerCase().includes(searchCategory.toLowerCase())
   );
 
   // === FUNCIONES PARA PRODUCTOS ===
@@ -596,13 +614,87 @@ export default function SettingsModal({ user, onClose }) {
             </div>
 
             {/* Lista de categorías */}
-            <div className="space-y-2">
-              <h3
-                className="text-base sm:text-lg font-semibold"
-                style={{ color: "var(--foreground)" }}
+            {searchCategory && (
+              <div 
+                className="text-xs px-3 py-2 rounded-md border-l-4 mb-3"
+                style={{ 
+                  backgroundColor: "var(--background)", 
+                  borderLeftColor: "var(--primary)",
+                  color: "var(--text-secondary)"
+                }}
               >
-                Categorías Existentes ({categories.length})
-              </h3>
+                💡 Tip: Presiona <kbd className="px-1 py-0.5 rounded text-xs font-mono" style={{ backgroundColor: "var(--surface)" }}>Escape</kbd> para limpiar la búsqueda
+              </div>
+            )}
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <h3
+                  className="text-base sm:text-lg font-semibold"
+                  style={{ color: "var(--foreground)" }}
+                >
+                  Categorías Existentes ({filteredCategories.length}/{categories.length})
+                </h3>
+                
+                {/* Campo de búsqueda */}
+                {categories.length > 0 && (
+                  <div className="relative flex-shrink-0 w-full sm:w-64">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <svg
+                        className={`h-4 w-4 transition-colors ${searchCategory ? 'animate-pulse' : ''}`}
+                        style={{ color: searchCategory ? "var(--primary)" : "var(--text-secondary)" }}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                        />
+                      </svg>
+                    </div>
+                    <input
+                      ref={searchCategoryInputRef}
+                      type="text"
+                      value={searchCategory}
+                      onChange={(e) => setSearchCategory(e.target.value)}
+                      placeholder="Buscar categoría... (Ctrl+F)"
+                      className={`w-full pl-10 pr-4 py-2 rounded-md border focus:outline-none focus:ring-2 text-sm transition-all ${
+                        searchCategory ? 'ring-1' : ''
+                      }`}
+                      style={{
+                        backgroundColor: "var(--surface)",
+                        borderColor: searchCategory ? "var(--primary)" : "var(--border)",
+                        color: "var(--foreground)",
+                        "--tw-ring-color": "var(--primary)",
+                      }}
+                    />
+                    {searchCategory && (
+                      <button
+                        onClick={() => setSearchCategory("")}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                        style={{ color: "var(--text-secondary)" }}
+                      >
+                        <svg
+                          className="h-4 w-4 hover:opacity-70 transition-opacity"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+              
               {categories.length === 0 ? (
                 <p
                   className="text-center py-8 text-sm"
@@ -610,9 +702,26 @@ export default function SettingsModal({ user, onClose }) {
                 >
                   No tienes categorías creadas aún
                 </p>
+              ) : filteredCategories.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="text-2xl mb-2">🔍</div>
+                  <p
+                    className="text-sm"
+                    style={{ color: "var(--text-secondary)" }}
+                  >
+                    No se encontraron categorías que coincidan con &quot;{searchCategory}&quot;
+                  </p>
+                  <button
+                    onClick={() => setSearchCategory("")}
+                    className="mt-2 text-sm underline hover:no-underline transition-all"
+                    style={{ color: "var(--primary)" }}
+                  >
+                    Limpiar búsqueda
+                  </button>
+                </div>
               ) : (
                 <div className="space-y-2 max-h-48 sm:max-h-60 overflow-y-auto">
-                  {categories.map((category) => (
+                  {filteredCategories.map((category) => (
                     <div
                       key={category.id}
                       className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-md border space-y-2 sm:space-y-0"
@@ -657,7 +766,7 @@ export default function SettingsModal({ user, onClose }) {
                             className="font-medium text-sm sm:text-base"
                             style={{ color: "var(--foreground)" }}
                           >
-                            📂 {category.nombre}
+                            📂 {highlightSearchText(category.nombre, searchCategory)}
                           </span>
                           <div className="flex gap-2 self-end sm:self-center">
                             <button
