@@ -1,7 +1,7 @@
 <div align="center">
   <img src="public/images/logo.png" alt="CartPilot Logo" width="120" height="120">
   
-  # 🛒 CartPilot
+  # CartPilot
   
   ### *Smart Shopping Lists for Modern Life*
   
@@ -154,74 +154,8 @@ CartPilot was created to solve the shopping challenges faced by a busy restauran
 ### 💡 Innovation in Everyday Tasks
 We believe that everyday tasks deserve innovative solutions. CartPilot transforms the mundane grocery shopping experience into an efficient, enjoyable activity.
 
-### 🌱 Sustainable Shopping
-By eliminating paper lists and reducing unnecessary trips through stores, CartPilot contributes to more sustainable shopping habits.
-
----
-
-## 🚀 Deployment
-
-CartPilot is automatically deployed on [Vercel](https://vercel.com) at [cartpilot.vercel.app](https://cartpilot.vercel.app).
-
-### Deploy Your Own
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/your-username/cartpilot)
-
-1. Click the deploy button above
-2. Connect your GitHub account
-3. Configure environment variables
-4. Deploy! 🚀
-
----
-
-## 📚 Documentation
-
-- 📖 [User Guide](./docs/USER_GUIDE.md) - How to use CartPilot effectively
-- 🔧 [Development Guide](./docs/DEVELOPMENT.md) - Contributing to CartPilot
-- 🔐 [Authentication Setup](./docs/AUTH_SETUP.md) - Setting up user authentication
-- 📧 [Email Configuration](./docs/EMAIL_SETUP.md) - Email notifications setup
-- 🚨 [Alert System](./docs/ALERT_SYSTEM.md) - Understanding the alert system
-
----
-
-## 🤝 Contributing
-
-We love contributions! CartPilot is an open-source project that welcomes developers of all skill levels.
-
-### 🌟 How to Contribute
-
-1. **Fork the repository**
-2. **Create a feature branch** (`git checkout -b feature/amazing-feature`)
-3. **Commit your changes** (`git commit -m 'Add amazing feature'`)
-4. **Push to the branch** (`git push origin feature/amazing-feature`)
-5. **Open a Pull Request**
-
-### 🐛 Found a Bug?
-
-1. Check if it's already reported in [Issues](https://github.com/your-username/cartpilot/issues)
-2. If not, create a new issue with detailed information
-3. Include steps to reproduce, expected behavior, and screenshots if applicable
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 🙏 Acknowledgments
-
-- **Restaurant Team** - For inspiring the creation of CartPilot
-- **Open Source Community** - For the amazing tools and libraries
-- **Beta Testers** - For valuable feedback and suggestions
-- **Contributors** - For making CartPilot better every day
-
----
 
 <div align="center">
-  
-  ### 🌟 Star us on GitHub if CartPilot helps you shop smarter!
   
   **Made with ❤️ for smarter shopping**
   
