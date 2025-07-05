@@ -1459,7 +1459,14 @@ export default function Dashboard() {
                                             className="flex items-center space-x-1 px-2 py-1 rounded hover:bg-gray-100 transition-colors"
                                             title="Editar cantidad"
                                           >
-                                            <span>{formatQuantity(item.cantidad)}</span>
+                                            <span 
+                                              className="font-bold text-sm"
+                                              style={{ 
+                                                color: "var(--primary)"
+                                              }}
+                                            >
+                                              {formatQuantity(item.cantidad)}
+                                            </span>
                                             <svg className="w-3 h-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                             </svg>
@@ -1485,7 +1492,8 @@ export default function Dashboard() {
                                         )}
                                         {item.productos.cara && (
                                           <span className="flex items-center">
-                                            <span className="mr-1">👉</span>
+                                            <span className="mr-3">|</span>
+                                            <span className="mr-1">Cara</span>
                                             <span>{item.productos.cara}</span>
                                           </span>
                                         )}
