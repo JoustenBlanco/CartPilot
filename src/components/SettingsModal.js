@@ -35,13 +35,16 @@ export default function SettingsModal({ user, onClose }) {
   const [editingProductData, setEditingProductData] = useState({});
   const [searchSupermarket, setSearchSupermarket] = useState("");
   const [searchCategory, setSearchCategory] = useState("");
+  const [searchProduct, setSearchProduct] = useState("");
   const searchInputRef = useRef(null);
   const searchCategoryInputRef = useRef(null);
+  const searchProductInputRef = useRef(null);
 
   // Limpiar búsqueda cuando se cambia de pestaña
   useEffect(() => {
     setSearchSupermarket("");
     setSearchCategory("");
+    setSearchProduct("");
   }, [activeTab]);
 
   // Limpiar campo "cara" cuando se borra el estante en nuevo producto
@@ -294,6 +297,9 @@ export default function SettingsModal({ user, onClose }) {
         } else if (activeTab === 'categories') {
           event.preventDefault();
           searchCategoryInputRef.current?.focus();
+        } else if (activeTab === 'products') {
+          event.preventDefault();
+          searchProductInputRef.current?.focus();
         }
       }
       if (event.key === 'Escape') {
@@ -303,13 +309,16 @@ export default function SettingsModal({ user, onClose }) {
         } else if (activeTab === 'categories' && searchCategory) {
           setSearchCategory("");
           searchCategoryInputRef.current?.blur();
+        } else if (activeTab === 'products' && searchProduct) {
+          setSearchProduct("");
+          searchProductInputRef.current?.blur();
         }
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [activeTab, searchSupermarket, searchCategory]);
+  }, [activeTab, searchSupermarket, searchCategory, searchProduct]);
 
   // Función para resaltar el texto de búsqueda
   const highlightSearchText = (text, searchTerm) => {
@@ -343,6 +352,11 @@ export default function SettingsModal({ user, onClose }) {
   // Filtrar categorías basado en la búsqueda
   const filteredCategories = categories.filter(category =>
     category.nombre.toLowerCase().includes(searchCategory.toLowerCase())
+  );
+
+  // Filtrar productos basado en la búsqueda
+  const filteredProducts = products.filter(product =>
+    product.nombre.toLowerCase().includes(searchProduct.toLowerCase())
   );
 
   // === FUNCIONES PARA PRODUCTOS ===
@@ -1310,13 +1324,86 @@ export default function SettingsModal({ user, onClose }) {
             </div>
 
             {/* Lista de productos */}
-            <div>
-              <h3
-                className="text-lg font-semibold mb-4"
-                style={{ color: "var(--foreground)" }}
+            {searchProduct && (
+              <div 
+                className="text-xs px-3 py-2 rounded-md border-l-4 mb-3"
+                style={{ 
+                  backgroundColor: "var(--background)", 
+                  borderLeftColor: "var(--primary)",
+                  color: "var(--text-secondary)"
+                }}
               >
-                Productos Existentes ({products.length})
-              </h3>
+                💡 Tip: Presiona <kbd className="px-1 py-0.5 rounded text-xs font-mono" style={{ backgroundColor: "var(--surface)" }}>Escape</kbd> para limpiar la búsqueda
+              </div>
+            )}
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <h3
+                  className="text-lg font-semibold"
+                  style={{ color: "var(--foreground)" }}
+                >
+                  Productos Existentes ({filteredProducts.length}/{products.length})
+                </h3>
+                
+                {/* Campo de búsqueda */}
+                {products.length > 0 && (
+                  <div className="relative flex-shrink-0 w-full sm:w-64">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <svg
+                        className={`h-4 w-4 transition-colors ${searchProduct ? 'animate-pulse' : ''}`}
+                        style={{ color: searchProduct ? "var(--primary)" : "var(--text-secondary)" }}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                        />
+                      </svg>
+                    </div>
+                    <input
+                      ref={searchProductInputRef}
+                      type="text"
+                      value={searchProduct}
+                      onChange={(e) => setSearchProduct(e.target.value)}
+                      placeholder="Buscar producto... (Ctrl+F)"
+                      className={`w-full pl-10 pr-4 py-2 rounded-md border focus:outline-none focus:ring-2 text-sm transition-all ${
+                        searchProduct ? 'ring-1' : ''
+                      }`}
+                      style={{
+                        backgroundColor: "var(--surface)",
+                        borderColor: searchProduct ? "var(--primary)" : "var(--border)",
+                        color: "var(--foreground)",
+                        "--tw-ring-color": "var(--primary)",
+                      }}
+                    />
+                    {searchProduct && (
+                      <button
+                        onClick={() => setSearchProduct("")}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                        style={{ color: "var(--text-secondary)" }}
+                      >
+                        <svg
+                          className="h-4 w-4 hover:opacity-70 transition-opacity"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
 
               {products.length === 0 ? (
                 <div
@@ -1329,9 +1416,26 @@ export default function SettingsModal({ user, onClose }) {
                   <div className="text-2xl mb-2">📦</div>
                   <p>No tienes productos creados aún</p>
                 </div>
+              ) : filteredProducts.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="text-2xl mb-2">🔍</div>
+                  <p
+                    className="text-sm"
+                    style={{ color: "var(--text-secondary)" }}
+                  >
+                    No se encontraron productos que coincidan con &quot;{searchProduct}&quot;
+                  </p>
+                  <button
+                    onClick={() => setSearchProduct("")}
+                    className="mt-2 text-sm underline hover:no-underline transition-all"
+                    style={{ color: "var(--primary)" }}
+                  >
+                    Limpiar búsqueda
+                  </button>
+                </div>
               ) : (
                 <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {products.map((product) => (
+                  {filteredProducts.map((product) => (
                     <div
                       key={product.id}
                       className="rounded-lg border overflow-hidden"
@@ -1636,7 +1740,7 @@ export default function SettingsModal({ user, onClose }) {
                                   className="font-semibold text-base truncate"
                                   style={{ color: "var(--foreground)" }}
                                 >
-                                  {product.nombre}
+                                  {highlightSearchText(product.nombre, searchProduct)}
                                 </h4>
                                 {product.descripcion && (
                                   <span
