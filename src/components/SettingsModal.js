@@ -33,6 +33,13 @@ export default function SettingsModal({ user, onClose }) {
   const [editingSupermarket, setEditingSupermarket] = useState(null);
   const [editingProduct, setEditingProduct] = useState(null);
   const [editingProductData, setEditingProductData] = useState({});
+  const [searchSupermarket, setSearchSupermarket] = useState("");
+  const searchInputRef = useRef(null);
+
+  // Limpiar búsqueda cuando se cambia de pestaña
+  useEffect(() => {
+    setSearchSupermarket("");
+  }, [activeTab]);
 
   // Limpiar campo "cara" cuando se borra el estante en nuevo producto
   useEffect(() => {
@@ -273,6 +280,52 @@ export default function SettingsModal({ user, onClose }) {
       setLoading(false);
     }
   };
+
+  // Atajo de teclado para enfocar la búsqueda (Ctrl/Cmd + F cuando está en la pestaña de supermercados)
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === 'f' && activeTab === 'supermarkets') {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+      }
+      if (event.key === 'Escape' && activeTab === 'supermarkets' && searchSupermarket) {
+        setSearchSupermarket("");
+        searchInputRef.current?.blur();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [activeTab, searchSupermarket]);
+
+  // Función para resaltar el texto de búsqueda
+  const highlightSearchText = (text, searchTerm) => {
+    if (!searchTerm.trim()) return text;
+    
+    const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    const parts = text.split(regex);
+    
+    return parts.map((part, index) => 
+      regex.test(part) ? (
+        <mark 
+          key={index} 
+          className="px-1 rounded"
+          style={{ 
+            backgroundColor: "var(--primary)", 
+            color: "white",
+            fontWeight: "500"
+          }}
+        >
+          {part}
+        </mark>
+      ) : part
+    );
+  };
+
+  // Filtrar supermercados basado en la búsqueda
+  const filteredSupermarkets = supermarkets.filter(supermarket =>
+    supermarket.nombre.toLowerCase().includes(searchSupermarket.toLowerCase())
+  );
 
   // === FUNCIONES PARA PRODUCTOS ===
 
@@ -702,16 +755,88 @@ export default function SettingsModal({ user, onClose }) {
                   {loading ? "Creando..." : "Agregar"}
                 </button>
               </div>
-            </div>
-
-            {/* Lista de supermercados */}
-            <div className="space-y-2">
-              <h3
-                className="text-base sm:text-lg font-semibold"
-                style={{ color: "var(--foreground)" }}
-              >
-                Supermercados Existentes ({supermarkets.length})
-              </h3>
+            </div>              {/* Lista de supermercados */}
+              {searchSupermarket && (
+                <div 
+                  className="text-xs px-3 py-2 rounded-md border-l-4 mb-3"
+                  style={{ 
+                    backgroundColor: "var(--background)", 
+                    borderLeftColor: "var(--primary)",
+                    color: "var(--text-secondary)"
+                  }}
+                >
+                  💡 Tip: Presiona <kbd className="px-1 py-0.5 rounded text-xs font-mono" style={{ backgroundColor: "var(--surface)" }}>Escape</kbd> para limpiar la búsqueda
+                </div>
+              )}
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <h3
+                  className="text-base sm:text-lg font-semibold"
+                  style={{ color: "var(--foreground)" }}
+                >
+                  Supermercados Existentes ({filteredSupermarkets.length}/{supermarkets.length})
+                </h3>
+                
+                {/* Campo de búsqueda */}
+                {supermarkets.length > 0 && (
+                  <div className="relative flex-shrink-0 w-full sm:w-64">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <svg
+                        className={`h-4 w-4 transition-colors ${searchSupermarket ? 'animate-pulse' : ''}`}
+                        style={{ color: searchSupermarket ? "var(--primary)" : "var(--text-secondary)" }}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                        />
+                      </svg>
+                    </div>
+                    <input
+                      ref={searchInputRef}
+                      type="text"
+                      value={searchSupermarket}
+                      onChange={(e) => setSearchSupermarket(e.target.value)}
+                      placeholder="Buscar supermercado... (Ctrl+F)"
+                      className={`w-full pl-10 pr-4 py-2 rounded-md border focus:outline-none focus:ring-2 text-sm transition-all ${
+                        searchSupermarket ? 'ring-1' : ''
+                      }`}
+                      style={{
+                        backgroundColor: "var(--surface)",
+                        borderColor: searchSupermarket ? "var(--primary)" : "var(--border)",
+                        color: "var(--foreground)",
+                        "--tw-ring-color": "var(--primary)",
+                      }}
+                    />
+                    {searchSupermarket && (
+                      <button
+                        onClick={() => setSearchSupermarket("")}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                        style={{ color: "var(--text-secondary)" }}
+                      >
+                        <svg
+                          className="h-4 w-4 hover:opacity-70 transition-opacity"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+              
               {supermarkets.length === 0 ? (
                 <p
                   className="text-center py-8 text-sm"
@@ -719,9 +844,26 @@ export default function SettingsModal({ user, onClose }) {
                 >
                   No tienes supermercados creados aún
                 </p>
+              ) : filteredSupermarkets.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="text-2xl mb-2">🔍</div>
+                  <p
+                    className="text-sm"
+                    style={{ color: "var(--text-secondary)" }}
+                  >
+                    No se encontraron supermercados que coincidan con &quot;{searchSupermarket}&quot;
+                  </p>
+                  <button
+                    onClick={() => setSearchSupermarket("")}
+                    className="mt-2 text-sm underline hover:no-underline transition-all"
+                    style={{ color: "var(--primary)" }}
+                  >
+                    Limpiar búsqueda
+                  </button>
+                </div>
               ) : (
                 <div className="space-y-2 max-h-48 sm:max-h-60 overflow-y-auto">
-                  {supermarkets.map((supermarket) => (
+                  {filteredSupermarkets.map((supermarket) => (
                     <div
                       key={supermarket.id}
                       className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-md border space-y-2 sm:space-y-0"
@@ -769,7 +911,7 @@ export default function SettingsModal({ user, onClose }) {
                             className="font-medium text-sm sm:text-base"
                             style={{ color: "var(--foreground)" }}
                           >
-                            🏪 {supermarket.nombre}
+                            🏪 {highlightSearchText(supermarket.nombre, searchSupermarket)}
                           </span>
                           <div className="flex gap-2 self-end sm:self-center">
                             <button
@@ -1311,36 +1453,6 @@ export default function SettingsModal({ user, onClose }) {
                                   )}
                                 </select>
                               </div>
-                            </div>
-
-                            <div>
-                              <label
-                                className="block text-sm font-medium mb-2"
-                                style={{ color: "var(--foreground)" }}
-                              >
-                                URL de imagen
-                              </label>
-                              <input
-                                type="url"
-                                value={
-                                  editingProductData.foto_url !== undefined
-                                    ? editingProductData.foto_url
-                                    : product.foto_url || ""
-                                }
-                                onChange={(e) =>
-                                  setEditingProductData({
-                                    ...editingProductData,
-                                    foto_url: e.target.value,
-                                  })
-                                }
-                                placeholder="https://ejemplo.com/imagen.jpg"
-                                className="w-full px-3 py-2 rounded border text-sm"
-                                style={{
-                                  backgroundColor: "var(--surface)",
-                                  borderColor: "var(--border)",
-                                  color: "var(--foreground)",
-                                }}
-                              />
                             </div>
                           </div>
 
