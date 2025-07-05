@@ -562,12 +562,6 @@ export default function Dashboard() {
                   >
                     Mis Listas de Compras
                   </h1>
-                  <p 
-                    className="mt-1 text-sm"
-                    style={{ color: "var(--text-secondary)" }}
-                  >
-                    Gestiona tus listas de compras de forma inteligente
-                  </p>
                 </div>
                 <button
                   onClick={() => setCurrentView('create')}
@@ -580,7 +574,6 @@ export default function Dashboard() {
                   Nueva Lista
                 </button>
               </div>
-
               {/* Grid de listas */}
               {loadingData ? (
                 <div className="text-center py-12">
